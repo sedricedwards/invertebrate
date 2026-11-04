@@ -86,6 +86,10 @@ In our runs (3 per case, each with and without the skill), both configurations f
 - Learning from 👍/👎 reactions
 - Automatic review of every PR (it runs on request only)
 
+## Privacy
+
+Invertebrate collects and stores nothing, and sends data only when you ask it to post a review to GitHub. See the [Privacy Policy](PRIVACY.md).
+
 ## License
 
 MIT
