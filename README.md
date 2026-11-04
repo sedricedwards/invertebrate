@@ -45,7 +45,9 @@ Posting to GitHub happens only when you ask (`post it`, `--post`). The review is
 
 ## Configuration
 
-Invertebrate reads Greptile's `.greptile/` config format, from the repo root and from any directory containing a changed file:
+You can add an optional `.invertebrate/` folder to your repo, at the root or in any subdirectory. Invertebrate only reads it and never creates or changes it. Settings in a subfolder's `.invertebrate/` apply to changes in that part of the repo.
+
+Already using Greptile? Invertebrate reads your existing `.greptile/` folder as is, since the format is the same. If a directory has both folders, `.invertebrate/` wins.
 
 | File | Purpose |
 |---|---|
@@ -53,7 +55,18 @@ Invertebrate reads Greptile's `.greptile/` config format, from the repo root and
 | `rules.md` | Plain-English team rules |
 | `files.json` | Extra files to read as context |
 
-If there's no `.greptile/` folder, it uses `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` as the rules.
+Example `.invertebrate/config.json`:
+
+```json
+{
+  "strictness": 2,
+  "rules": [
+    { "id": "audit-mutations", "rule": "Every endpoint that changes data must call audit_log().", "scope": ["app/**/*.py"], "severity": "high" }
+  ]
+}
+```
+
+If there's no config folder at all, it uses `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` as the rules.
 
 ## Tests
 
@@ -66,7 +79,7 @@ claude plugin eval . --allow-tools Write,Edit,Bash --scaffold
 
 These are real, billed model runs.
 
-In our runs (3 per case, each with and without the skill), both configurations found every planted bug. What the skill added was a consistent report format and correct handling of `.greptile` strictness. Its known weakness: at default strictness it tends to drop small but useful remarks, such as a test that doesn't actually exercise the change.
+In our runs (3 per case, each with and without the skill), both configurations found every planted bug. What the skill added was a consistent report format and correct handling of config strictness. Its known weakness: at default strictness it tends to drop small but useful remarks, such as a test that doesn't actually exercise the change.
 
 ## Not included
 

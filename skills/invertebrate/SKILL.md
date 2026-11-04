@@ -1,6 +1,6 @@
 ---
 name: invertebrate
-description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers) to catch cross-file bugs, then outputs Greptile's format — plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs. Honors `.greptile/` config (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
+description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers) to catch cross-file bugs, then outputs Greptile's format — plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
 ---
 
 # Invertebrate — Greptile-style review
@@ -24,7 +24,7 @@ A clean PR is a valid outcome. If verification leaves no findings, say so, score
 
 ## 2. Load review config
 
-Look for `.greptile/` in the repo root **and** in every directory containing a changed file (monorepo: nearest wins for scalar settings, lists/instructions accumulate from parents). Also accept a legacy root `greptile.json` with the same fields.
+The config folder is `.invertebrate/`. For compatibility with teams already using Greptile, `.greptile/` uses the identical format and is read wherever no `.invertebrate/` exists. Resolve per directory: in each directory, `.invertebrate/` if present, else `.greptile/` — never both from one directory. Check the repo root **and** every directory containing a changed file (monorepo: nearest wins for scalar settings, lists/instructions accumulate from parents). Also accept a legacy root `greptile.json` with the same fields. Never create or modify these folders — they're read-only input.
 
 - `config.json`:
   - `strictness` 1|2|3 (default 2) — see filtering in §5
@@ -35,7 +35,7 @@ Look for `.greptile/` in the repo root **and** in every directory containing a c
 - `rules.md` — plain markdown rules for that directory tree
 - `files.json` — `{files:[{path, description, scope}]}`: read these files as context when scope matches (or always if no scope)
 
-No `.greptile/`? Use CLAUDE.md / AGENTS.md / CONTRIBUTING.md coding standards as rules instead. Note in the report which config was applied.
+Neither folder anywhere? Use CLAUDE.md / AGENTS.md / CONTRIBUTING.md coding standards as rules instead. Note in the report which config was applied.
 
 A rule violation becomes a finding that cites the rule (`Rule: <id or first words>`). Rule severity maps: high→P1, medium→P2, low→P2.
 
@@ -143,7 +143,7 @@ Use exactly this structure (sections may be omitted only where noted):
 #### 2. ...
 
 ---
-<sub>Reviewed <N> files · config: <.greptile path | CLAUDE.md | defaults> · strictness <n> · <commit sha if known></sub>
+<sub>Reviewed <N> files · config: <.invertebrate or .greptile path | CLAUDE.md | defaults> · strictness <n> · <commit sha if known></sub>
 ````
 
 Suggested-fix diffs must be real, minimal, and apply to the actual code. If the fix spans files, show each file's hunk with its path as a heading line. If no safe one-hunk fix exists, describe it instead of inventing one.
