@@ -14,7 +14,7 @@ Its second edge is **signal**: every comment is a concrete, verified bug with a 
 | User gave | Diff source |
 |---|---|
 | PR number / URL | `gh pr view <n> --json title,body,baseRefName,headRefName,files` + `gh pr diff <n>` |
-| Branch | `git diff $(git merge-base <base> HEAD)...HEAD` (base = main/master/develop, whichever exists) |
+| Branch | `git diff <base>...HEAD` (three dots = diff from the merge base; base = main/master/develop, whichever exists) |
 | Nothing | `git diff HEAD` (staged+unstaged); if empty, the current branch vs its base |
 | A `.diff`/`.patch` file | that file; the working tree is the post-change repo |
 
@@ -47,7 +47,7 @@ For each such symbol, search the **whole repo**, not just changed files:
 - **Callers / references** — `Grep` for the old and new name. A removed/renamed symbol with surviving references is a guaranteed bug.
 - **Siblings** — code that does the same kind of thing (other endpoints in the router, other handlers of the same interface, other migrations). New code that skips a pattern every sibling follows (auth decorator, audit log, validation, transaction, lock, `await`) is a top Greptile catch.
 - **Callees** — read the implementation of anything the new code calls whose contract matters (does it throw? return null? already lock? is it async?).
-- **Data flow** — where inputs come from (user-controlled? URL param?) and where they go (SQL/HogQL, shell, filesystem path, `eval`, HTML).
+- **Data flow** — where inputs come from (user-controlled? URL param?) and where they go (SQL/HogQL, shell, filesystem path, dynamic code execution, HTML).
 
 Keep a short list: `symbol → files that depend on it → what the change does to them`. Use it to write findings; don't dump it in the report.
 
