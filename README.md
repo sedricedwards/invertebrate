@@ -86,9 +86,16 @@ In our runs (3 per case, each with and without the skill), both configurations f
 - Learning from 👍/👎 reactions
 - Automatic review of every PR (it runs on request only)
 
-## Privacy
+## Privacy and external services
 
-Invertebrate collects and stores nothing, and sends data only when you ask it to post a review to GitHub. See the [Privacy Policy](PRIVACY.md).
+Invertebrate declares no connectors. It contacts one outside service, **GitHub**, through the GitHub CLI (`gh`), signed in as you:
+
+| When | What is sent to GitHub |
+|---|---|
+| You give a PR number or URL | Requests for that PR's title, description, file list and diff (read only) |
+| You explicitly ask to post the review | The review text and inline comments, posted to that PR as a `COMMENT` review |
+
+It contacts no other service, and it collects and stores nothing. See the [Privacy Policy](PRIVACY.md).
 
 ## License
 
