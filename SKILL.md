@@ -1,0 +1,177 @@
+---
+name: invertebrate
+description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers) to catch cross-file bugs, then outputs Greptile's format — plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs. Honors `.greptile/` config (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
+---
+
+# Invertebrate — Greptile-style review
+
+Greptile's edge over a linter is **context**: it reviews the diff against a graph of the whole repo, so it catches the rename that left three callers broken, the new endpoint missing the auth decorator every sibling has, the "optimization" that a caller makes a no-op. Reproduce that. A review that only reads the diff is not this skill.
+
+Its second edge is **signal**: every comment is a concrete, verified bug with a fix, not a style essay. Teams turn off reviewers that cry wolf. When in doubt, leave it out.
+
+## 1. Resolve the target
+
+| User gave | Diff source |
+|---|---|
+| PR number / URL | `gh pr view <n> --json title,body,baseRefName,headRefName,files` + `gh pr diff <n>` |
+| Branch | `git diff $(git merge-base <base> HEAD)...HEAD` (base = main/master/develop, whichever exists) |
+| Nothing | `git diff HEAD` (staged+unstaged); if empty, the current branch vs its base |
+| A `.diff`/`.patch` file | that file; the working tree is the post-change repo |
+
+Read the PR title/description if available (from `gh`, or a description file the user points to). "A security PR ships without the fix" is a real Greptile catch: list each claim the description makes ("fixes X", "adds validation for Y") and check the diff actually delivers it. A claimed fix that isn't in the diff is a finding at the severity of the bug it claims to fix.
+
+A clean PR is a valid outcome. If verification leaves no findings, say so, score it 4-5/5, and stop — inventing issues to look thorough is the fastest way to get a reviewer muted.
+
+## 2. Load review config
+
+Look for `.greptile/` in the repo root **and** in every directory containing a changed file (monorepo: nearest wins for scalar settings, lists/instructions accumulate from parents). Also accept a legacy root `greptile.json` with the same fields.
+
+- `config.json`:
+  - `strictness` 1|2|3 (default 2) — see filtering in §5
+  - `commentTypes` (default `["logic","syntax","style"]`) — drop findings of unlisted types
+  - `ignorePatterns` (gitignore syntax, newline-separated) — skip matching files
+  - `instructions` — free-form reviewer guidance, follow it
+  - `rules[]` — `{id, rule, scope[glob], severity: low|medium|high, enabled}`; apply only where `scope` matches; `disabledRules` removes inherited ids
+- `rules.md` — plain markdown rules for that directory tree
+- `files.json` — `{files:[{path, description, scope}]}`: read these files as context when scope matches (or always if no scope)
+
+No `.greptile/`? Use CLAUDE.md / AGENTS.md / CONTRIBUTING.md coding standards as rules instead. Note in the report which config was applied.
+
+A rule violation becomes a finding that cites the rule (`Rule: <id or first words>`). Rule severity maps: high→P1, medium→P2, low→P2.
+
+## 3. Build the context graph (the part that matters)
+
+For each changed hunk, identify the symbols it **defines, removes, renames, or changes the signature/semantics of** (functions, methods, classes, types, exported constants, routes, DB columns, config keys, env vars, event names).
+
+For each such symbol, search the **whole repo**, not just changed files:
+- **Callers / references** — `Grep` for the old and new name. A removed/renamed symbol with surviving references is a guaranteed bug.
+- **Siblings** — code that does the same kind of thing (other endpoints in the router, other handlers of the same interface, other migrations). New code that skips a pattern every sibling follows (auth decorator, audit log, validation, transaction, lock, `await`) is a top Greptile catch.
+- **Callees** — read the implementation of anything the new code calls whose contract matters (does it throw? return null? already lock? is it async?).
+- **Data flow** — where inputs come from (user-controlled? URL param?) and where they go (SQL/HogQL, shell, filesystem path, `eval`, HTML).
+
+Keep a short list: `symbol → files that depend on it → what the change does to them`. Use it to write findings; don't dump it in the report.
+
+## 4. Hunt
+
+Walk the diff with the graph in hand. Categories Greptile actually reports, with real examples:
+
+- **Logic** — loop exits early leaving partial state; flag/condition inverted; aliased value escapes a check; warnings never reach the user.
+- **Refactoring** — rename leaves callers undefined; moved code drops a side effect.
+- **Security** — missing authn/authz on new endpoint; injection via user input into query/shell/path; sandbox/scope escape (symlinks, mounts, `~`, variable expansion); null/missing field bypasses a guard.
+- **Validation** — empty/malformed input accepted as valid; valid input rejected; unanchored regex.
+- **Runtime / Syntax** — call to undefined method; missing `await`; wrong arg count; type mismatch; code that won't compile.
+- **Error handling** — swallowed exceptions; raw tracebacks/secrets leaked to clients; resource closed on wrong/undefined handle in the error path.
+- **Concurrency** — check-then-act and read-modify-write races; shared mutable state across tasks/threads; startup ordering drops events.
+- **Data loss / integrity** — non-atomic writes; double-apply on replay; silent truncation; deleted data reappearing.
+- **Performance** — N+1 queries, O(n²) on hot path, an "optimization" that's a silent no-op.
+- **Alignment / leakage** — ground truth or secrets exposed through a state/debug endpoint or log.
+
+**Verify every candidate before keeping it.** You must be able to state: the exact line, the concrete input/state that triggers it, and the wrong outcome. If you can't construct the failure, drop it. Re-read the surrounding code — half of plausible-looking bugs are handled three lines later.
+
+## 5. Classify and filter
+
+Each finding gets:
+- **Severity** — **P0** must fix before merge (security hole, data loss, crash on a common path, build break). **P1** should fix (wrong behavior, broken edge case, rule violation with high severity). **P2** consider (maintainability, minor perf, low-severity rule).
+- **Type** — `logic` (bugs, behavior, edge cases), `syntax` (won't compile/run, language misuse), `style` (quality, naming, conventions).
+
+Filter by `strictness`:
+- **1** — keep P0, P1, P2.
+- **2** (default) — keep P0, P1; keep P2 only if it violates an explicit configured rule.
+- **3** — keep P0, plus these P1s: security, crashes/500s reachable from user input, and violations of `high`-severity configured rules. Strictness 3 means "only what would page someone or that the team explicitly asked for", and a remotely triggerable crash qualifies.
+
+Then drop types not in `commentTypes`. Pure formatting a formatter would fix: never report.
+
+## 6. Confidence score (0-5)
+
+| Score | Meaning |
+|---|---|
+| 5/5 | Production ready — merge |
+| 4/5 | Minor polish — merge after small fixes (only P2s) |
+| 3/5 | Implementation issues — address feedback first (any P1) |
+| 2/5 | Significant bugs — needs rework (multiple P1s, or one P0 that's easy to fix) |
+| 0-1/5 | Critical problems — rethink (P0 security/data-loss, or design is wrong) |
+
+Scores are contextual: the same bug in payments/auth/migrations scores lower than in an internal script. Give one sentence of justification.
+
+## 7. Diagram
+
+Pick by what changed; skip for trivial diffs (docs, config bumps, <~20 lines of local logic):
+- **sequenceDiagram** — multi-component interactions, API/request flows, async/concurrent ordering (show the race if there is one)
+- **erDiagram** — schema / data model changes
+- **classDiagram** — class/interface hierarchy changes
+- **flowchart** — control flow / business logic changes
+
+Diagram the change, not the whole system. Keep it under ~15 nodes. Mark the buggy step with a `Note` / label.
+
+## 8. Output
+
+Use exactly this structure (sections may be omitted only where noted):
+
+````markdown
+## Invertebrate Review — <PR title or branch>
+
+### Summary
+<2-4 sentences, plain language: what the change does, who/what it affects, why. Then 1 sentence on the main risk.>
+
+### Confidence Score: N/5
+<one sentence why>
+
+### Findings
+| # | Sev | Type | Location | Issue |
+|---|---|---|---|---|
+| 1 | P0 | logic | `path/file.ts:42` | <short title> |
+(If none: "No issues found.")
+
+### Diagram
+```mermaid
+...
+```
+(omit section for trivial changes)
+
+### Inline Comments
+
+#### 1. [P0 · logic] <short title>
+`path/file.ts:42`
+
+<What's wrong, the concrete failure scenario, and — if cross-file — which other files break and why. 2-5 sentences.>
+
+```diff
+- old line
++ fixed line
+```
+
+#### 2. ...
+
+---
+<sub>Reviewed <N> files · config: <.greptile path | CLAUDE.md | defaults> · strictness <n> · <commit sha if known></sub>
+````
+
+Suggested-fix diffs must be real, minimal, and apply to the actual code. If the fix spans files, show each file's hunk with its path as a heading line. If no safe one-hunk fix exists, describe it instead of inventing one.
+
+After the report, offer: "Say `fix all`, `fix P0`, or `fix #2` and I'll apply them." Don't apply fixes unprompted.
+
+## 9. Posting to GitHub (only when asked: `--post`, "post it", "comment on the PR")
+
+Posting is outward-facing — only do it on an explicit request for that PR.
+
+1. Get `owner/repo` (`gh repo view --json nameWithOwner -q .nameWithOwner`) and head sha (`gh pr view <n> --json headRefOid -q .headRefOid`).
+2. Inline comments can only target lines present in the PR diff (RIGHT side, new line numbers). Findings on lines outside the diff go into the summary body only.
+3. Write the review JSON to a temp file and post it in one call:
+
+```json
+{
+  "commit_id": "<head sha>",
+  "event": "COMMENT",
+  "body": "<the full markdown report from §8 minus the Inline Comments section>",
+  "comments": [
+    {"path": "src/file.ts", "line": 42, "side": "RIGHT",
+     "body": "**P0 · logic** — <title>\n\n<explanation>\n\n```suggestion\n<replacement for exactly line 42>\n```"}
+  ]
+}
+```
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<n>/reviews --method POST --input review.json
+```
+
+Use GitHub ```` ```suggestion ```` blocks only when the replacement covers exactly the commented line(s) (use `start_line` + `line` for multi-line). Otherwise use a ```` ```diff ```` block. Never use `REQUEST_CHANGES`/`APPROVE` unless the user asks. Report the review URL from the response.

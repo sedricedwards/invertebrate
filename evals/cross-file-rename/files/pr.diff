@@ -1,0 +1,21 @@
+diff --git a/src/user.ts b/src/user.ts
+--- a/src/user.ts
++++ b/src/user.ts
+@@ -1,5 +1,5 @@
+ export interface User { id: string; first: string; last: string; email: string }
+ 
+-export function formatUser(u: User): string {
++export function formatUserName(u: User): string {
+   return `${u.first} ${u.last}`.trim();
+ }
+diff --git a/src/profile.ts b/src/profile.ts
+--- a/src/profile.ts
++++ b/src/profile.ts
+@@ -1,5 +1,5 @@
+-import { User, formatUser } from "./user";
++import { User, formatUserName } from "./user";
+ 
+ export function profileHeader(u: User): string {
+-  return `<h1>${formatUser(u)}</h1>`;
++  return `<h1>${formatUserName(u)}</h1>`;
+ }

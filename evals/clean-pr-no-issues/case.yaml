@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: clean-pr-no-issues
+expected_outcome: |
+  Correct small change with a test: no P0/P1 findings invented; confidence 4-5/5; notes that the only caller (sync.py, BATCH_SIZE=50) is unaffected.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: unit-change-callers
+expected_outcome: |
+  Flags that parsePrice now returns dollars but src/invoice.ts (divides by 100) and src/checkout.ts (passes to createCharge expecting integer cents) were not updated; P0/P1; confidence <= 2/5.
+context:
+  scaffold_script: place-files.sh

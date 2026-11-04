@@ -1,0 +1,14 @@
+diff --git a/app/views.py b/app/views.py
+--- a/app/views.py
++++ b/app/views.py
+@@ -21,3 +21,10 @@ def delete_org(name):
+     ORGS.pop(name, None)
+     audit_log(g.user, "delete_org", name)
+     return "", 204
++
++@app.post("/api/orgs/<name>/provision")
++def provision_org(name):
++    plan = request.json.get("plan", "free")
++    tmpVar = ORGS.setdefault(name, {"owner": None})
++    tmpVar["plan"] = plan
++    return jsonify(tmpVar), 200

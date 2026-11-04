@@ -1,0 +1,6 @@
+{
+  "strictness": 3,
+  "rules": [
+    {"id": "audit-mutations", "rule": "Every endpoint that mutates ORGS must call audit_log().", "scope": ["app/**/*.py"], "severity": "high"}
+  ]
+}

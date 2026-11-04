@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: claimed-fix-missing
+expected_outcome: |
+  Flags that safe_name only rejects leading '/', so '../' traversal still reads outside UPLOAD_DIR; states the PR does not deliver the claimed SEC-212 fix; P0; suggests realpath/commonpath containment check; confidence <= 1/5.
+context:
+  scaffold_script: place-files.sh
