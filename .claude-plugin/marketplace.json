@@ -1,0 +1,12 @@
+{
+  "name": "sedricedwards",
+  "description": "Claude Code plugins by Sedric Edwards",
+  "owner": { "name": "Sedric Edwards" },
+  "plugins": [
+    {
+      "name": "invertebrate",
+      "source": "./",
+      "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'."
+    }
+  ]
+}

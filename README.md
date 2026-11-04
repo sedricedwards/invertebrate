@@ -6,9 +6,19 @@ Not affiliated with or endorsed by Greptile.
 
 ## Install
 
+In your terminal (Claude Code 2.1.275 or later):
+
 ```bash
-git clone https://github.com/sedricedwards/invertebrate ~/.claude/skills/invertebrate
+claude plugin install invertebrate --marketplace sedricedwards/invertebrate
 ```
+
+Or inside a Claude Code session:
+
+```
+/plugin install invertebrate --marketplace sedricedwards/invertebrate
+```
+
+To update later: `claude plugin update invertebrate`. To remove: `claude plugin uninstall invertebrate`.
 
 ## Use
 
@@ -50,9 +60,11 @@ If there's no `.greptile/` folder, it uses `CLAUDE.md` / `AGENTS.md` / `CONTRIBU
 `evals/` contains 6 seeded-bug sample projects: a cross-file rename, a semantic unit change, a missing auth check under strictness 3, an async race, a PR that claims a security fix it doesn't deliver, and a clean PR that should get no findings. To run them:
 
 ```bash
-cd ~/.claude/skills/invertebrate
+git clone https://github.com/sedricedwards/invertebrate && cd invertebrate
 claude plugin eval . --allow-tools Write,Edit,Bash --scaffold
 ```
+
+These are real, billed model runs.
 
 In our runs (3 per case, each with and without the skill), both configurations found every planted bug. What the skill added was a consistent report format and correct handling of `.greptile` strictness. Its known weakness: at default strictness it tends to drop small but useful remarks, such as a test that doesn't actually exercise the change.
 
