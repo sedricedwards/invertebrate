@@ -1,0 +1,6 @@
+{
+  "strictness": 1,
+  "rules": [
+    {"id": "docstrings-required", "rule": "Every public function must have a docstring.", "scope": ["app/**/*.py"], "severity": "high"}
+  ]
+}

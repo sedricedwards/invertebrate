@@ -1,0 +1,13 @@
+diff --git a/app/orders.py b/app/orders.py
+--- a/app/orders.py
++++ b/app/orders.py
+@@ -10,3 +10,9 @@ def update_address(user, order_id, address):
+     order["address"] = address
+     audit_log(user, "update_address", order_id)
+     return order
++
++
++def cancel_order(user, order_id):
++    order = ORDERS[order_id]
++    order["status"] = "cancelled"
++    return order

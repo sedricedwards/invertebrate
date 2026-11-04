@@ -70,7 +70,7 @@ If there's no config folder at all, it uses `CLAUDE.md` / `AGENTS.md` / `CONTRIB
 
 ## Tests
 
-`evals/` contains 6 seeded-bug sample projects: a cross-file rename, a semantic unit change, a missing auth check under strictness 3, an async race, a PR that claims a security fix it doesn't deliver, and a clean PR that should get no findings. To run them:
+`evals/` contains 7 seeded-bug sample projects: a cross-file rename, a semantic unit change, a missing auth check under strictness 3, an async race, a PR that claims a security fix it doesn't deliver, a clean PR that should get no findings, and a repo with both `.invertebrate/` and `.greptile/` to check that `.invertebrate/` wins. To run them:
 
 ```bash
 git clone https://github.com/sedricedwards/invertebrate && cd invertebrate
