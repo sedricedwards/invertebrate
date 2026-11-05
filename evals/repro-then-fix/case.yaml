@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: repro-then-fix
+expected_outcome: |
+  Flags that dedupe_latest keeps the OLDEST event per id (setdefault after ascending sort) with Proof=repro from an executed failing test; does not report a KeyError on missing "ts" (sync() filters it first); after "fix all" the repro is rerun and passes; no repro files left behind.
+context:
+  scaffold_script: place-files.sh

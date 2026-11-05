@@ -1,0 +1,24 @@
+diff --git a/lib/events.py b/lib/events.py
+new file mode 100644
+--- /dev/null
++++ b/lib/events.py
+@@ -0,0 +1,6 @@
++def dedupe_latest(events):
++    """Return one event per id, keeping the most recent (highest ts)."""
++    seen = {}
++    for event in sorted(events, key=lambda e: e["ts"]):
++        seen.setdefault(event["id"], event)
++    return list(seen.values())
+diff --git a/lib/sync.py b/lib/sync.py
+--- a/lib/sync.py
++++ b/lib/sync.py
+@@ -1,6 +1,8 @@
++from lib.events import dedupe_latest
++
+ 
+ def sync(raw_events, sink):
+     # Events without a timestamp come from the legacy importer and are dropped here.
+     events = [e for e in raw_events if "ts" in e]
+-    for event in events:
++    for event in dedupe_latest(events):
+         sink.write(event)
