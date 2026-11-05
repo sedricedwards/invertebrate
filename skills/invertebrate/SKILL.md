@@ -23,7 +23,7 @@ Read the PR title/description if available (from `gh`, or a description file the
 **Re-review.** Look for a previous Invertebrate review of the same target: on a PR, the newest review body containing `invertebrate:sha=` (`gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate`); locally, a previous report the user points to (its footer sha). If found, call its sha `PREV`:
 - `git merge-base --is-ancestor PREV HEAD` succeeds → hunt for new findings only in `git diff PREV..HEAD`, but still build the context graph (§3) against the whole repo.
 - It fails (force-push/rebase) → full review.
-- Either way, re-check every previous finding against HEAD: `resolved` (the failure no longer reproduces / the code is gone), `open`, or `regressed` (was fixed, broken again). Never re-report an open finding as new.
+- Either way, re-check every previous finding against HEAD: `resolved` (the failure no longer reproduces / the code is gone), `open`, or `regressed` (was fixed, broken again). Status comes only from rerunning the previous finding's own repro/scenario: passes → `resolved`, even if you found a related gap. Never re-report an open finding as new. Before writing Findings, compare each new finding with every previous one. If it points at the same file:line or function, or has the same wrong outcome (e.g. another input that still overdraws), it is not new: add it as a note in that finding's status row, not in Findings.
 
 A clean PR is a valid outcome. If verification leaves no findings, say so, score it 4-5/5, and stop — inventing issues to look thorough is the fastest way to get a reviewer muted.
 
@@ -66,7 +66,7 @@ Walk the diff with the graph in hand. Categories Greptile actually reports, with
 - **Logic** — loop exits early leaving partial state; flag/condition inverted; aliased value escapes a check; warnings never reach the user.
 - **Refactoring** — rename leaves callers undefined; moved code drops a side effect.
 - **Security** — missing authn/authz on new endpoint; injection via user input into query/shell/path; sandbox/scope escape (symlinks, mounts, `~`, variable expansion); null/missing field bypasses a guard.
-- **Validation** — empty/malformed input accepted as valid; valid input rejected; unanchored regex.
+- **Validation** — empty/malformed input accepted as valid; valid input rejected; unanchored regex. For every user-controlled value the new code reads (body, query, header, path param), ask what happens when it's missing, `null`, or the wrong type (`request.json` is `None`, a list, or a string, so `.get` raises): a crash there is a 500 reachable from user input.
 - **Runtime / Syntax** — call to undefined method; missing `await`; wrong arg count; type mismatch; code that won't compile.
 - **Error handling** — swallowed exceptions; raw tracebacks/secrets leaked to clients; resource closed on wrong/undefined handle in the error path.
 - **Concurrency** — check-then-act and read-modify-write races; shared mutable state across tasks/threads; startup ordering drops events.
@@ -94,8 +94,10 @@ Procedure:
    - Fails as predicted → `repro`.
    - Passes → the bug doesn't happen. Drop the finding.
    - Fails for another reason (import error, missing fixture) → fix the test, at most twice, else `none`.
+   - Framework not installed (Flask, Django, Express…) → don't give up: stub the boundary instead (put a fake module in `sys.modules`, or pass a fake `request` object) and call the handler directly. A missing framework alone is not a reason for `none`.
 4. **Never** install dependencies, hit the network, or touch real databases/services to get a proof. If proving needs that, the proof is `none`.
-5. After the last run, no repro files may be left behind: check `git status --porcelain`, or list the directory if it isn't a git repo.
+5. **Order.** All proofs run on the unmodified post-change code, before the report is written and before any file is edited, even when the same message also asks for fixes. A `repro` label requires a run you executed that failed; a test that was only run after a fix proves nothing.
+6. After the last run, no repro files may be left behind: check `git status --porcelain`, or list the directory if it isn't a git repo.
 
 A P0/P1 with proof `none` drops one severity level (P0→P1, P1→P2) before filtering. Keep each repro's source: it goes in the inline comment so the reader can run it, and the fix loop (§8) reruns it.
 
@@ -110,7 +112,7 @@ Filter by `strictness`:
 - **2** (default) — keep P0, P1; keep P2 only if it violates an explicit configured rule.
 - **3** — keep P0, plus these P1s: security, crashes/500s reachable from user input, and violations of `high`-severity configured rules. Strictness 3 means "only what would page someone or that the team explicitly asked for", and a remotely triggerable crash qualifies.
 
-Then drop types not in `commentTypes`. Pure formatting a formatter would fix: never report.
+Then drop types not in `commentTypes`. Pure formatting a formatter would fix: never report. A filtered finding may get at most one footer line naming it as filtered, with no advice to fix it anyway.
 
 ## 6. Confidence score (0-5)
 
