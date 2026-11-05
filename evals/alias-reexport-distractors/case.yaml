@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: alias-reexport-distractors
+expected_outcome: |
+  money.format gains a required `currency` param. Flags the two callers reached only through aliases — src/report.ts (`format as fmt`) and src/invoice.ts (via the `formatMoney` re-export in src/index.ts) — as broken; does not flag any of the 30 src/views files, which call the unrelated dates.format.
+context:
+  scaffold_script: place-files.sh
