@@ -39,14 +39,21 @@ Accepted targets are a PR number or URL (needs the `gh` CLI), a branch (compared
 
 ## Output
 
+Everything is color-coded and labeled in plain words, so people who don't write code can read it too.
+
+- **Verdict**: "Safe to merge? Yes / After small fixes / Not yet / No", plus one sentence on the biggest problem
 - **Summary**: what the change does and its main risk, in plain language
-- **Confidence score**: 0–5 (5 = merge, 3 = fix first, 0–1 = rethink)
-- **Findings table**: each finding's severity (P0 critical / P1 high / P2 medium), type (logic / syntax / style), proof, and location
-  - Proof is one of: `repro` (a test it wrote and ran failed), `build` (compiler/typecheck error), `trace` (for example a surviving reference to a removed symbol), or `none`
+- **Confidence score**: 0–5 with a traffic-light color and meter, e.g. `🟡 3/5 ●●●○○` (🟢 5–4 = merge, 🟡 3 = fix first, 🟠 2 = rework, 🔴 0–1 = rethink)
+- **Findings table**: each finding's severity (🔴 P0 Critical / 🟠 P1 High / 🟡 P2 Medium), type (Bug / Won't compile / Cleanup), proof, and location
+  - Proof is one of: Proven by test (a test it wrote and ran failed), Proven by build (compiler/typecheck error), Found by search (for example a surviving reference to a removed symbol), or Unproven
   - Unproven P0/P1 findings are demoted one level
-- **Diagram**: mermaid sequence, ER, class, or flow diagram, chosen to fit the change; skipped for trivial diffs
+- **Diagram**: mermaid sequence, ER, class, or flow diagram, chosen to fit the change; skipped for trivial diffs. It's drawn as a picture on GitHub and in the visual report; in the terminal you see its source
 - **Inline comments**: the concrete failure scenario, a suggested-fix diff, and the repro test so you can run it yourself
-- **Since last review** (re-reviews only): each earlier finding marked resolved / open / regressed. Only new findings get new comments
+- **Since last review** (re-reviews only): each earlier finding marked ✅ resolved / ⚠️ open / 🔴 regressed, and the score across reviews (e.g. `1/5 → 2/5 → 4/5`). Only new findings get new comments
+
+### Visual report
+
+After a review, say `html` and Invertebrate writes a self-contained HTML page to your temp folder and opens it: the colored verdict, a bar chart of findings by severity, a chart of the score across reviews, the diagram drawn as a picture, and one color-coded card per finding. It needs Python. The page is one small file (about 25 KB) that works offline and loads nothing from the internet; the charts and diagram are drawn by code built into the page.
 
 ### Proving findings
 

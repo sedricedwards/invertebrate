@@ -1,6 +1,6 @@
 ---
 name: invertebrate
-description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, and can propose team rules from past PR review comments ("invertebrate learn"). Outputs Greptile's format — plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
+description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, and can propose team rules from past PR review comments ("invertebrate learn"). Outputs Greptile's format, color-coded for non-programmers — safe-to-merge verdict, plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs — plus an optional visual HTML report with charts. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
 ---
 
 # Invertebrate — Greptile-style review
@@ -20,7 +20,7 @@ Its second edge is **signal**: every comment is a concrete, verified bug with a 
 
 Read the PR title/description if available (from `gh`, or a description file the user points to). "A security PR ships without the fix" is a real Greptile catch: list each claim the description makes ("fixes X", "adds validation for Y") and check the diff actually delivers it. A claimed fix that isn't in the diff is a finding at the severity of the bug it claims to fix.
 
-**Re-review.** Look for a previous Invertebrate review of the same target: on a PR, the newest review body containing `invertebrate:sha=` (`gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate`); locally, a previous report the user points to (its footer sha). If found, call its sha `PREV`:
+**Re-review.** Look for a previous Invertebrate review of the same target: on a PR, the newest review body containing `invertebrate:sha=` (`gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate`); locally, a previous report the user points to (its footer sha). If found, call its sha `PREV`, and keep its `scores=` list for the score trend (older markers have none: use its `Confidence Score: N/5`):
 - `git merge-base --is-ancestor PREV HEAD` succeeds → hunt for new findings only in `git diff PREV..HEAD`, but still build the context graph (§3) against the whole repo.
 - It fails (force-push/rebase) → full review.
 - Either way, re-check every previous finding against HEAD: `resolved` (the failure no longer reproduces / the code is gone), `open`, or `regressed` (was fixed, broken again). Status comes only from rerunning the previous finding's own repro/scenario: passes → `resolved`, even if you found a related gap. Never re-report an open finding as new. Before writing Findings, compare each new finding with every previous one. If it points at the same file:line or function, or has the same wrong outcome (e.g. another input that still overdraws), it is not new: add it as a note in that finding's status row, not in Findings.
@@ -118,13 +118,13 @@ Then drop types not in `commentTypes`. Pure formatting a formatter would fix: ne
 
 ## 6. Confidence score (0-5)
 
-| Score | Meaning |
-|---|---|
-| 5/5 | Production ready — merge |
-| 4/5 | Minor polish — merge after small fixes (only P2s) |
-| 3/5 | Implementation issues — address feedback first (any P1) |
-| 2/5 | Significant bugs — needs rework (multiple P1s, or one P0 that's easy to fix) |
-| 0-1/5 | Critical problems — rethink (P0 security/data-loss, or design is wrong) |
+| Score | Color + meter | Safe to merge? | Meaning |
+|---|---|---|---|
+| 5/5 | 🟢 ●●●●● | Yes | Production ready — merge |
+| 4/5 | 🟢 ●●●●○ | After small fixes | Minor polish — merge after small fixes (only P2s) |
+| 3/5 | 🟡 ●●●○○ | Not yet | Implementation issues — address feedback first (any P1) |
+| 2/5 | 🟠 ●●○○○ | No | Significant bugs — needs rework (multiple P1s, or one P0 that's easy to fix) |
+| 0-1/5 | 🔴 ●○○○○ / ○○○○○ | No | Critical problems — rethink (P0 security/data-loss, or design is wrong) |
 
 Scores are contextual: the same bug in payments/auth/migrations scores lower than in an internal script. Give one sentence of justification.
 
@@ -140,28 +140,39 @@ Diagram the change, not the whole system. Keep it under ~15 nodes. Mark the bugg
 
 ## 8. Output
 
+The report is also read by people who don't write code. Every code gets a color and a plain word next to it:
+
+| Code | Shown as |
+|---|---|
+| P0 / P1 / P2 | 🔴 P0 Critical / 🟠 P1 High / 🟡 P2 Medium |
+| logic / syntax / style | Bug (logic) / Won't compile (syntax) / Cleanup (style) |
+| repro / build / trace / none | Proven by test (repro) / Proven by build (build) / Found by search (trace) / Unproven (none) |
+| resolved / open / regressed | ✅ resolved / ⚠️ open / 🔴 regressed |
+
 Use exactly this structure (sections may be omitted only where noted):
 
 ````markdown
 ## Invertebrate Review — <PR title or branch>
 
+**Safe to merge? <answer from §6>** — <one sentence a non-programmer understands: the biggest problem and who it hurts, or "no problems found">
+
 ### Summary
 <2-4 sentences, plain language: what the change does, who/what it affects, why. Then 1 sentence on the main risk.>
 
-### Confidence Score: N/5
+### Confidence Score: <color> N/5 <meter>
 <one sentence why>
 
-### Since last review (<PREV sha, 7 chars>)
+### Since last review (<PREV sha, 7 chars>) · score <all scores from the marker, then this one, e.g. 1/5 → 2/5 → 4/5>
 | # | Previous finding | Status |
 |---|---|---|
-| 1 | <title> | resolved / open / regressed |
+| 1 | <title> | ✅ resolved / ⚠️ open / 🔴 regressed |
 (omit section unless this is a re-review)
 
 ### Findings
-| # | Sev | Type | Proof | Location | Issue |
+| # | Severity | Type | Proof | Location | Issue |
 |---|---|---|---|---|---|
-| 1 | P0 | logic | repro | `path/file.ts:42` | <short title> |
-(If none: "No issues found." On a re-review, list only new findings here.)
+| 1 | 🔴 P0 Critical | Bug (logic) | Proven by test (repro) | `path/file.ts:42` | <short title> |
+(If none: "✅ No issues found." On a re-review, list only new findings here.)
 
 ### Diagram
 ```mermaid
@@ -171,7 +182,7 @@ Use exactly this structure (sections may be omitted only where noted):
 
 ### Inline Comments
 
-#### 1. [P0 · logic] <short title>
+#### 1. 🔴 [P0 · logic] <short title>
 `path/file.ts:42`
 
 <What's wrong, the concrete failure scenario, and — if cross-file — which other files break and why. 2-5 sentences.>
@@ -193,12 +204,28 @@ Use exactly this structure (sections may be omitted only where noted):
 
 ---
 <sub>Reviewed <N> files · config: <.invertebrate or .greptile path | CLAUDE.md | defaults> · strictness <n> · <commit sha if known></sub>
-<!-- invertebrate:sha=<full head sha> -->
+<!-- invertebrate:sha=<full head sha> scores=<previous scores from the marker, then this one, comma-separated, e.g. 1,2,4> -->
 ````
 
 Suggested-fix diffs must be real, minimal, and apply to the actual code. If the fix spans files, show each file's hunk with its path as a heading line. If no safe one-hunk fix exists, describe it instead of inventing one.
 
-After the report, offer: "Say `fix all`, `fix P0`, or `fix #2` and I'll apply them." Don't apply fixes unprompted.
+After the report, offer: "Say `fix all`, `fix P0`, or `fix #2` and I'll apply them, or `html` for a visual report you can share." Don't apply fixes unprompted.
+
+**Visual report** (only when asked: `html`, "visual report", "something I can show my manager"). Write the review you just gave as JSON to a temp file outside the repo (e.g. `invertebrate-review-<sha7>.json` in the OS temp folder), then run `python3 <this skill's base directory>/scripts/report.py <that file>`. It writes a self-contained `.html` next to it with a colored verdict, a findings-by-severity bar chart, the score trend, the rendered diagram, and one card per finding, and prints its path. Open it in the default browser and give the user the path. No Python → say the visual report needs Python. Shape (same content as the markdown report; omit keys that don't apply):
+
+```json
+{"title": "<PR title or branch>", "verdict": "<the Safe-to-merge sentence>", "score": 2,
+ "score_reason": "<why>", "scores": [1, 2], "summary": "<summary>",
+ "since_last": [{"title": "<previous finding>", "status": "resolved|open|regressed"}],
+ "findings": [{"n": 1, "sev": "P0", "type": "logic", "proof": "repro", "location": "path/file.ts:42",
+   "title": "<short title>", "body": "<what's wrong>", "diff": "- old\n+ new",
+   "repro": "<the repro test and command, or the compiler error>"}],
+ "diagram": <see below>, "footer": "<the footer line>"}
+```
+
+`scores` is the same history as the marker, ending with this score. `diagram` is the §7 diagram as data, not mermaid text. Mark the buggy step with `"bad": true`.
+- sequenceDiagram → `{"kind": "sequence", "actors": ["Client", "API"], "steps": [{"from": "Client", "to": "API", "label": "POST /pay"}, {"note": "charged twice", "over": "API", "bad": true}]}`
+- flowchart / classDiagram / erDiagram → `{"kind": "graph", "nodes": [{"id": "a", "label": "Order", "fields": ["id: int", "total_cents: int"]}], "edges": [{"from": "a", "to": "b", "label": "1 to many"}]}`. Class members and table columns go in `fields`; ER cardinality goes in the edge label.
 
 **Fix loop.** When asked to fix, for each selected finding:
 1. Apply the fix.
