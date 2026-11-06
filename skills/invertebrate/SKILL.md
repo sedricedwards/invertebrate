@@ -106,7 +106,7 @@ A P0/P1 with proof `none` drops one severity level (P0→P1, P1→P2) before fil
 ## 5. Classify and filter
 
 Each finding gets:
-- **Severity** — **P0** must fix before merge (security hole, data loss, crash on a common path, build break). **P1** should fix (wrong behavior, broken edge case, rule violation with high severity). **P2** consider (maintainability, minor perf, low-severity rule).
+- **Severity** — **P0** must fix before merge (security hole, data loss, crash on a common path, build break). A missing auth, permission, or ownership check that lets one user read or change another user's data is a security hole: always P0, even when the fix is one line and even when another finding in the same function is P1. **P1** should fix (wrong behavior, broken edge case, rule violation with high severity). **P2** consider (maintainability, minor perf, low-severity rule).
 - **Type** — `logic` (bugs, behavior, edge cases), `syntax` (won't compile/run, language misuse), `style` (quality, naming, conventions).
 
 Filter by `strictness`:

@@ -11,11 +11,11 @@
 <text x="0" y="108" class="l">No false alarms</text>
 <rect x="150" y="86" width="412.8" height="18" class="w"/>
 <text x="568.8" y="99" class="v">96%</text>
-<rect x="150" y="106" width="322.5" height="18" class="o"/>
-<text x="478.5" y="119" class="v">75%</text>
+<rect x="150" y="106" width="305.3" height="18" class="o"/>
+<text x="461.3" y="119" class="v">71%</text>
 <text x="0" y="160" class="l">Right severity</text>
-<rect x="150" y="138" width="382.7" height="18" class="w"/>
-<text x="538.7" y="151" class="v">89%</text>
+<rect x="150" y="138" width="430.0" height="18" class="w"/>
+<text x="586.0" y="151" class="v">100%</text>
 <rect x="150" y="158" width="1.0" height="18" class="o"/>
 <text x="156.0" y="171" class="v">0%</text>
 <text x="0" y="212" class="l">Proof and fix</text>

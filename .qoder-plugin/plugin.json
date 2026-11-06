@@ -1,6 +1,6 @@
 {
   "name": "invertebrate",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
   "author": { "name": "Sedric Edwards" },
   "homepage": "https://github.com/sedricedwards/invertebrate",
