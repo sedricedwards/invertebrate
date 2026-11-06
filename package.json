@@ -1,0 +1,10 @@
+{
+  "name": "invertebrate",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/sedricedwards/invertebrate.git" },
+  "keywords": ["pi-package", "pi", "skills"],
+  "pi": { "skills": ["./skills"] }
+}

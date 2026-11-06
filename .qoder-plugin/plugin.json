@@ -1,0 +1,11 @@
+{
+  "name": "invertebrate",
+  "version": "1.4.0",
+  "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
+  "author": { "name": "Sedric Edwards" },
+  "homepage": "https://github.com/sedricedwards/invertebrate",
+  "repository": "https://github.com/sedricedwards/invertebrate",
+  "license": "MIT",
+  "keywords": ["code-review", "pull-request", "greptile", "bugs"],
+  "skills": "./skills/"
+}

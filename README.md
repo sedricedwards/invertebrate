@@ -6,21 +6,41 @@ Because it runs locally, it can also **prove** what it finds. Each serious findi
 
 Not affiliated with or endorsed by Greptile.
 
+<p align="center"><img src="assets/benchmark.svg" width="640" alt="Share of eval checks passed, with Invertebrate vs the same model with no skill. Finds the bug: 100% vs 100%. No false alarms: 96% vs 75%. Right severity: 89% vs 0%. Proof and fix: 93% vs 56%. Report format: 100% vs 13%."></p>
+
+<p align="center">
+  <strong>Same bugs found. False alarms avoided: 96% vs 75%. Critical bugs labeled P0: 89% vs 0%. Repro tests and fixes: 93% vs 56%.</strong><br>
+  <sub>Invertebrate 1.4.0, 11 seeded-bug repos, 3 runs each, Claude Code + Opus 5.5, the same model with and without the skill. Costs about 2x a plain review. <a href="#numbers">Details</a>.</sub>
+</p>
+
+Works in Claude Code, Codex, GitHub Copilot CLI, Gemini CLI, Antigravity, and more agents. See [Install](#install).
+
 ## Install
 
-In your terminal (Claude Code 2.1.275 or later):
+**Claude Code** (2.1.275 or later), in your terminal:
 
 ```bash
 claude plugin install invertebrate --marketplace sedricedwards/invertebrate
 ```
 
-Or inside a Claude Code session:
+Or inside a session: `/plugin install invertebrate --marketplace sedricedwards/invertebrate`. Update with `claude plugin update invertebrate`, remove with `claude plugin uninstall invertebrate`.
 
-```
-/plugin install invertebrate --marketplace sedricedwards/invertebrate
+**Codex:**
+
+```bash
+codex plugin marketplace add sedricedwards/invertebrate
+codex plugin add invertebrate@sedricedwards
 ```
 
-To update later: `claude plugin update invertebrate`. To remove: `claude plugin uninstall invertebrate`.
+**Gemini CLI:**
+
+```bash
+gemini extensions install https://github.com/sedricedwards/invertebrate
+```
+
+**Any other agent:** Copilot CLI, Antigravity, Devin, Grok, Goose, Kimi, Qoder, pi, OpenCode, Cursor, Cline and the rest are covered in **[INSTALL.md](INSTALL.md)**. If your agent isn't listed, `npx skills add sedricedwards/invertebrate` copies the skill into most agents' skill folders.
+
+Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md), plus two stdlib Python helpers. Every other file at the repo root just tells a particular agent where that folder is.
 
 ## Use
 
@@ -112,7 +132,63 @@ claude plugin eval . --allow-tools Write,Edit,Bash --scaffold
 
 These are real, billed model runs.
 
-In our runs (3 per case, each with and without the skill), both configurations found every planted bug. What the skill added was a consistent report format and correct handling of config strictness. Its known weakness: at default strictness it tends to drop small but useful remarks, such as a test that doesn't actually exercise the change.
+To turn your runs into the numbers below and redraw `assets/benchmark.svg`, run `python evals/summarize.py`. It uses the newest with/without run of each case.
+
+## Numbers
+
+Each case is a small repo with a planted bug (or none), reviewed by Claude Code on Opus 5.5 three times **with** the skill and three times **without** it (the same model, given the same prompt). LLM judges score each review against 4–6 written checks. The table groups those checks by what they test.
+
+| Check | With Invertebrate | No skill |
+|---|--:|--:|
+| Finds the planted bug | **100%** (66/66) | 100% (66/66) |
+| No false alarms (doesn't flag decoys, filtered rules, or a clean PR) | **96%** (23/24) | 75% (18/24) |
+| Right severity (a critical bug is labeled P0) | **89%** (16/18) | 0% (0/18) |
+| Proof and fix (repro test run, suggested-fix diff, fix verified) | **93%** (25/27) | 56% (15/27) |
+| Report format (confidence score, findings table, diagram, re-review table) | **100%** (45/45) | 13% (6/45) |
+| Cases where every run passed every check | **9/11** | 0/11 |
+| Median cost per review | $0.37 | $0.18 |
+| Median time per review | 90 s | 60 s |
+| Median agent turns | 8 | 4 |
+
+How to read this:
+
+- **It doesn't find more bugs on these cases.** Opus 5.5 on its own caught every planted bug. The skill adds the things that decide whether a team keeps a reviewer turned on: no crying wolf, the right severity, and a test that proves the bug.
+- **"Right severity" is partly a format check.** Without the skill the model never uses P0/P1 labels, so it scores 0 there even when it calls a bug "high severity". The severity checks also require P0 rather than P1 for security and data-loss bugs.
+- **It costs more.** Building the context graph and running repro tests takes about twice the turns. The median review costs $0.19 more and takes 30 s longer.
+- **Where it still misses:** in `invertebrate-config-wins`, 2 of 3 runs rated an "anyone can cancel anyone's order" hole as P1 instead of P0. In `repro-then-fix`, 1 of 3 runs left a repro file behind, and its proof label didn't match a test that actually ran.
+- **Measured on 1.4.0** (2026-11-06), the version in this repo. Inside the eval sandbox the skill couldn't run its `context.py` helper and traced references with grep instead, so these numbers don't include the helper's speedup.
+
+Run it yourself: `claude plugin eval . --ablation with-without --allow-tools Write,Edit,Bash --scaffold`, then `python evals/summarize.py`. These are real, billed model runs, about $19 for the full suite.
+
+## Before / after
+
+A real pair of runs on 1.4.0 from the `invertebrate-config-wins` case. The PR adds `cancel_order` without the ownership check or the `audit_log()` call that its sibling `update_address` has. The repo has both an `.invertebrate/` config (strictness 3, an audit rule) and a `.greptile/` config (strictness 1, a docstring rule).
+
+<table>
+<tr><th width="50%">Same model, no skill</th><th width="50%">With Invertebrate</th></tr>
+<tr><td valign="top">
+
+> My verdict is **request changes**: the new `cancel_order` function has two serious problems.
+> 1. **Missing audit log** (breaks the `audit-order-changes` rule) …
+> 2. **No ownership check:** … anyone can cancel any order if they know its ID.
+> 3. **Minor:** it doesn't look at the order's current status before cancelling … also raises a plain `KeyError` …
+>
+> … `.greptile/config.json` … wasn't enforced, but my suggested fix adds a docstring anyway.
+
+</td><td valign="top">
+
+> **It's not safe to merge (1/5).** … both proven by tests that failed on the current code.
+>
+> | # | Severity | Location | Issue |
+> |---|---|---|---|
+> | 1 | 🔴 P0 Critical | `app/orders.py:15` | There's no ownership check, so any user can cancel anyone's order. |
+> | 2 | 🟠 P1 High | `app/orders.py:17` | It never calls `audit_log()`, which breaks the high-severity `audit-order-changes` rule. |
+>
+> Each finding in the review includes a short code fix and the test that proves it.
+
+</td></tr>
+<tr><td valign="top">Both bugs found, but the auth hole sits next to the missing audit line with no ranking, nothing is proven, and it adds noise that strictness 3 should filter out.</td><td valign="top">The auth hole is P0, both bugs are proven by a test that ran, and the rule the team overrode stays quiet. (In 2 of 3 runs the auth hole was rated P1; see <a href="#numbers">Numbers</a>.)</td></tr>
+</table>
 
 ## Not included
 

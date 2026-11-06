@@ -40,7 +40,7 @@ The config folder is `.invertebrate/`. For compatibility with teams already usin
 - `rules.md` — plain markdown rules for that directory tree
 - `files.json` — `{files:[{path, description, scope}]}`: read these files as context when scope matches (or always if no scope)
 
-Neither folder anywhere? Use CLAUDE.md / AGENTS.md / CONTRIBUTING.md coding standards as rules instead. Note in the report which config was applied.
+Neither folder anywhere? Use CLAUDE.md / AGENTS.md / GEMINI.md / CONTRIBUTING.md coding standards as rules instead. Note in the report which config was applied.
 
 The only exception to read-only: in learn mode (§10), when the user explicitly says to save proposed rules.
 
@@ -50,10 +50,10 @@ A rule violation becomes a finding that cites the rule (`Rule: <id or first word
 
 For each changed hunk, identify the symbols it **defines, removes, renames, or changes the signature/semantics of** (functions, methods, classes, types, exported constants, routes, DB columns, config keys, env vars, event names).
 
-**Start with the helper, in one call.** Run `python3 <this skill's base directory>/scripts/context.py` (`python` if `python3` is missing) with the diff source: `--diff <file>` for a diff file (PR target: save `gh pr diff <n>` to a scratch file first), else the git-diff args from §1 (`main...HEAD`, `HEAD`, `PREV..HEAD`). Add `--base <rev>` when removed lines' history should be read at a revision other than HEAD (the base branch for a branch target). It prints the changed symbols (definitions, plus the function enclosing each changed line), every whole-word reference across the repo with `x as y` aliases followed, files that only share the name (they never mention a changed module), and the commits that last touched each removed line (`FIX?` marks fix-like subjects). That is the first draft of the graph: don't re-grep or re-run `git log -L` for what it already lists. The steps below cover what it can't see: symbols it missed, LSP-only references, string references, siblings, callees, data flow. No Python available → do all of it by hand.
+**Start with the helper, in one call.** Run `python3 <this skill's base directory>/scripts/context.py` (the base directory is the folder holding this SKILL.md) (`python` if `python3` is missing) with the diff source: `--diff <file>` for a diff file (PR target: save `gh pr diff <n>` to a scratch file first), else the git-diff args from §1 (`main...HEAD`, `HEAD`, `PREV..HEAD`). Add `--base <rev>` when removed lines' history should be read at a revision other than HEAD (the base branch for a branch target). It prints the changed symbols (definitions, plus the function enclosing each changed line), every whole-word reference across the repo with `x as y` aliases followed, files that only share the name (they never mention a changed module), and the commits that last touched each removed line (`FIX?` marks fix-like subjects). That is the first draft of the graph: don't re-grep or re-run `git log -L` for what it already lists. The steps below cover what it can't see: symbols it missed, LSP-only references, string references, siblings, callees, data flow. No Python available → do all of it by hand.
 
 For each such symbol, search the **whole repo**, not just changed files:
-- **Callers / references** — if the `LSP` tool is available (load it via ToolSearch if it is only listed as deferred), use `findReferences` / `incomingCalls` on the symbol's definition (`goToImplementation` for interfaces): it follows aliased imports and re-exports and ignores unrelated symbols that share the name. Then `Grep` the old and new name anyway, for what LSP can't see: string references (routes, config keys, env vars, event names, reflection), other languages, and files LSP fails on. No LSP server → `Grep` alone, and chase every alias (`import { x as y }`, `export { x as z }`, `export *`) to its own uses. A removed/renamed symbol with surviving references is a guaranteed bug.
+- **Callers / references** — if an LSP tool is available (in Claude Code the `LSP` tool; load it via ToolSearch if it is only listed as deferred), use `findReferences` / `incomingCalls` on the symbol's definition (`goToImplementation` for interfaces): it follows aliased imports and re-exports and ignores unrelated symbols that share the name. Then grep the old and new name anyway (your search tool, or `rg`/`git grep`), for what LSP can't see: string references (routes, config keys, env vars, event names, reflection), other languages, and files LSP fails on. No LSP server → grep alone, and chase every alias (`import { x as y }`, `export { x as z }`, `export *`) to its own uses. A removed/renamed symbol with surviving references is a guaranteed bug.
 - **History** — for lines the diff deletes or rewrites, read why they exist: `git log -L <start>,<end>:<file> --format='%h %s' <base>` (or `git blame <base> -L <start>,<end> -- <file>`). If the commit that added them reads like a fix (fix, bug, race, CVE, revert, security, an issue number), check whether the PR brings that bug back. A reverted fix is a finding that cites the commit (`Reverts fix <sha> "<subject>"`), at the severity of the original bug.
 - **Siblings** — code that does the same kind of thing (other endpoints in the router, other handlers of the same interface, other migrations). New code that skips a pattern every sibling follows (auth decorator, audit log, validation, transaction, lock, `await`) is a top Greptile catch.
 - **Callees** — read the implementation of anything the new code calls whose contract matters (does it throw? return null? already lock? is it async?).
@@ -203,7 +203,7 @@ Use exactly this structure (sections may be omitted only where noted):
 #### 2. ...
 
 ---
-<sub>Reviewed <N> files · config: <.invertebrate or .greptile path | CLAUDE.md | defaults> · strictness <n> · <commit sha if known></sub>
+<sub>Reviewed <N> files · config: <.invertebrate or .greptile path | CLAUDE.md / AGENTS.md | defaults> · strictness <n> · <commit sha if known></sub>
 <!-- invertebrate:sha=<full head sha> scores=<previous scores from the marker, then this one, comma-separated, e.g. 1,2,4> -->
 ````
 

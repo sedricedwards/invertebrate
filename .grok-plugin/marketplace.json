@@ -1,0 +1,7 @@
+{
+  "name": "sedricedwards",
+  "owner": { "name": "Sedric Edwards" },
+  "plugins": [
+    { "name": "invertebrate", "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.", "source": "./skills", "category": "productivity" }
+  ]
+}

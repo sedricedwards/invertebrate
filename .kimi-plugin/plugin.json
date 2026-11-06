@@ -1,0 +1,9 @@
+{
+  "name": "invertebrate",
+  "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
+  "author": { "name": "Sedric Edwards" },
+  "homepage": "https://github.com/sedricedwards/invertebrate",
+  "license": "MIT",
+  "interface": { "displayName": "Invertebrate", "shortDescription": "Whole-repo code review that proves its findings" },
+  "skills": "./skills/"
+}

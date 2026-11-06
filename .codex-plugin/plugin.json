@@ -1,0 +1,21 @@
+{
+  "name": "invertebrate",
+  "version": "1.4.0",
+  "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
+  "author": { "name": "Sedric Edwards" },
+  "homepage": "https://github.com/sedricedwards/invertebrate",
+  "repository": "https://github.com/sedricedwards/invertebrate",
+  "license": "MIT",
+  "keywords": ["code-review", "pull-request", "greptile", "bugs"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Invertebrate",
+    "shortDescription": "Whole-repo code review that proves its findings",
+    "developerName": "Sedric Edwards",
+    "category": "Productivity",
+    "capabilities": ["Instructions"],
+    "websiteURL": "https://github.com/sedricedwards/invertebrate",
+    "defaultPrompt": ["invertebrate review my uncommitted changes", "invertebrate review PR #12"],
+    "logo": "./.claude-plugin/icon.png"
+  }
+}

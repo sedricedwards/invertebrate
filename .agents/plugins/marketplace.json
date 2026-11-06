@@ -1,0 +1,12 @@
+{
+  "name": "sedricedwards",
+  "interface": { "displayName": "Sedric Edwards" },
+  "plugins": [
+    {
+      "name": "invertebrate",
+      "source": { "source": "url", "url": "https://github.com/sedricedwards/invertebrate.git", "ref": "main" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}
