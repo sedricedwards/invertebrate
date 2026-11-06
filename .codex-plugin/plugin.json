@@ -1,6 +1,6 @@
 {
   "name": "invertebrate",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
   "author": { "name": "Sedric Edwards" },
   "homepage": "https://github.com/sedricedwards/invertebrate",
@@ -15,7 +15,6 @@
     "category": "Productivity",
     "capabilities": ["Instructions"],
     "websiteURL": "https://github.com/sedricedwards/invertebrate",
-    "defaultPrompt": ["invertebrate review my uncommitted changes", "invertebrate review PR #12"],
-    "logo": "./.claude-plugin/icon.png"
+    "defaultPrompt": ["invertebrate review my uncommitted changes", "invertebrate review PR #12"]
   }
 }

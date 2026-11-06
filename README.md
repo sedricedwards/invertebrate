@@ -38,7 +38,7 @@ codex plugin add invertebrate@sedricedwards
 gemini extensions install https://github.com/sedricedwards/invertebrate
 ```
 
-**Any other agent:** Copilot CLI, Antigravity, Devin, Grok, Goose, Kimi, Qoder, pi, OpenCode, Cursor, Cline and the rest are covered in **[INSTALL.md](INSTALL.md)**. If your agent isn't listed, `npx skills add sedricedwards/invertebrate` copies the skill into most agents' skill folders.
+**Any other agent:** Copilot CLI, Antigravity, Devin, Grok, Goose, Kimi, Qoder, pi, OpenCode, Cursor, Cline and the rest are covered in **[INSTALL.md](INSTALL.md)**. If your agent isn't listed, copy the `skills/invertebrate/` folder into its skills folder (see INSTALL.md).
 
 Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md), plus two stdlib Python helpers. Every other file at the repo root just tells a particular agent where that folder is.
 

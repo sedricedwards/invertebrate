@@ -97,15 +97,7 @@ omp plugin install invertebrate@sedricedwards
 
 ## OpenCode, Cursor, Cline, Windsurf, Factory Droid, and other skill-capable agents
 
-The [skills CLI](https://skills.sh) copies the skill folder into the right place for many agents:
-
-```bash
-npx skills add sedricedwards/invertebrate
-```
-
-Add `--agent <name>` to pick the agent and `--global` to install for every project.
-
-To do it by hand instead, copy `skills/invertebrate/` (the whole folder, including `scripts/`) into your agent's skills folder. For example, that's `.opencode/skills/` for OpenCode, `~/.factory/skills/` for Factory Droid, `~/.openclaw/skills/` for OpenClaw, and `~/.agents/skills/` for agents that read that shared folder.
+Copy `skills/invertebrate/` (the whole folder, including `scripts/`) into your agent's skills folder. For example, that's `.opencode/skills/` for OpenCode, `~/.factory/skills/` for Factory Droid, `~/.openclaw/skills/` for OpenClaw, and `~/.agents/skills/` for agents that read that shared folder.
 
 ## Agents with only a rules file
 
@@ -132,5 +124,4 @@ When my message contains the word "invertebrate", read /path/to/invertebrate/ski
 | Devin CLI | `devin plugins remove invertebrate` |
 | Grok Build | `grok plugin uninstall invertebrate` |
 | pi | `pi uninstall invertebrate` |
-| Skills CLI | `npx skills remove invertebrate` |
 | Copied folder or rules line | Delete it |
