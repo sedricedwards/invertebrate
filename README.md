@@ -40,7 +40,7 @@ gemini extensions install https://github.com/sedricedwards/invertebrate
 
 **Any other agent:** Copilot CLI, Antigravity, Devin, Grok, Goose, Kimi, Qoder, pi, OpenCode, Cursor, Cline and the rest are covered in **[INSTALL.md](INSTALL.md)**. If your agent isn't listed, copy the `skills/invertebrate/` folder into its skills folder (see INSTALL.md).
 
-Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md), plus two stdlib Python helpers. Every other file at the repo root just tells a particular agent where that folder is.
+Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md), plus three stdlib Python helpers. Every other file at the repo root just tells a particular agent where that folder is.
 
 ## Use
 
@@ -53,6 +53,7 @@ invertebrate review my uncommitted changes
 invertebrate review PR #12 and post it
 invertebrate re-review PR #12
 invertebrate learn
+invertebrate dashboard
 ```
 
 Accepted targets are a PR number or URL (needs the `gh` CLI), a branch (compared against main/master), the working tree, or a `.diff`/`.patch` file.
@@ -83,11 +84,23 @@ Invertebrate runs the project's build/typecheck if the tool is already installed
 
 Each review ends with a hidden `<!-- invertebrate:sha=... -->` marker. On the next run against the same PR (or a saved review you point to), Invertebrate reviews only the commits since then and rechecks the earlier findings. After a force-push it falls back to a full review.
 
+### Dashboard
+
+`invertebrate dashboard` builds one HTML page from the reviews already posted on your repo's last 100 PRs: PRs reviewed, median score, fix rate (findings fixed on a later push), PRs merged while a P0 was open, open PRs worst first, the score per week, new findings per week by severity, and how findings were proven. It reads the hidden marker at the end of each posted review, so nothing is stored anywhere else. Reviews from before 1.5 only show their score. Needs `gh` and Python.
+
 ### Learn mode
 
 `invertebrate learn` reads review comments on your last 30 merged PRs. It proposes rules for concerns the team accepted at least twice, and "don't flag" instructions for ones the team rejected at least twice. Each proposal links its PRs as evidence. Nothing is written until you say `save them`; then the rules go into `.invertebrate/`.
 
 Posting to GitHub happens only when you ask (`post it`, `--post`). The review is posted as a single `COMMENT` review and never approves or requests changes.
+
+### Every PR, automatically (GitHub Actions)
+
+1. Install the [Claude GitHub app](https://github.com/apps/claude) on the repo.
+2. Add one repo secret: `ANTHROPIC_API_KEY` (an API key, billed per token) or `CLAUDE_CODE_OAUTH_TOKEN` (run `claude setup-token` locally; uses your Pro/Max plan).
+3. Copy [`examples/invertebrate.yml`](examples/invertebrate.yml) to `.github/workflows/invertebrate.yml`, and add your build/test commands to its `--allowedTools` list so findings can be proven.
+
+Each push re-reviews only the new commits. Fork PRs are skipped, because their code would run with your secrets.
 
 ## Configuration
 
@@ -193,7 +206,8 @@ A real pair of runs on 1.4.0 from the `invertebrate-config-wins` case. The PR ad
 ## Not included
 
 - Learning live from 👍/👎 reactions (learn mode proposes rules from past PRs instead)
-- Automatic review of every PR (it runs on request only)
+- A hosted dashboard (the dashboard is a local HTML file you generate)
+- Jira and Linear links (GitHub issues a PR closes are checked)
 
 ## Privacy and external services
 
@@ -205,6 +219,8 @@ Invertebrate declares no connectors. It contacts one outside service, **GitHub**
 | You explicitly ask to post the review | The review text and inline comments, posted to that PR as a `COMMENT` review |
 | You re-review a PR | A request for that PR's earlier reviews (read only) |
 | You run `invertebrate learn` | Requests for your recent merged PRs and their review comments (read only) |
+| You run `invertebrate dashboard` | A request for your recent PRs and their reviews (read only) |
+| A PR closes an issue | A request for that issue's title and body (read only) |
 
 It contacts no other service, and it collects and stores nothing. See the [Privacy Policy](PRIVACY.md).
 

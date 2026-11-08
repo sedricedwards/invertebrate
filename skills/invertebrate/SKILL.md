@@ -1,6 +1,6 @@
 ---
 name: invertebrate
-description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, and can propose team rules from past PR review comments ("invertebrate learn"). Outputs Greptile's format, color-coded for non-programmers — safe-to-merge verdict, plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs — plus an optional visual HTML report with charts. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
+description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, checks the PR delivers what its linked issue asks, can propose team rules from past PR review comments ("invertebrate learn"), and builds a team dashboard from posted reviews ("invertebrate dashboard"). Outputs Greptile's format, color-coded for non-programmers — safe-to-merge verdict, plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs — plus an optional visual HTML report with charts. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
 ---
 
 # Invertebrate — Greptile-style review
@@ -19,6 +19,8 @@ Its second edge is **signal**: every comment is a concrete, verified bug with a 
 | A `.diff`/`.patch` file | that file; the working tree is the post-change repo |
 
 Read the PR title/description if available (from `gh`, or a description file the user points to). "A security PR ships without the fix" is a real Greptile catch: list each claim the description makes ("fixes X", "adds validation for Y") and check the diff actually delivers it. A claimed fix that isn't in the diff is a finding at the severity of the bug it claims to fix.
+
+**Linked issues.** The PR also promises whatever the issues it closes ask for. PR target: `gh pr view <n> --json closingIssuesReferences`, then `gh issue view <number> --repo <owner>/<repo> --json title,body` for each. Otherwise use an issue the user names or points to (a file, a pasted ticket). List each requirement the issue states (acceptance criteria, "must", "should") and check the diff delivers it, exactly like the description's claims. A requirement the diff misses is a finding at the severity of what goes wrong without it, citing the issue (`Issue #12 asks: <requirement>`). Don't report an issue's nice-to-haves or open questions.
 
 **Re-review.** Look for a previous Invertebrate review of the same target: on a PR, the newest review body containing `invertebrate:sha=` (`gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate`); locally, a previous report the user points to (its footer sha). If found, call its sha `PREV`, and keep its `scores=` list for the score trend (older markers have none: use its `Confidence Score: N/5`):
 - `git merge-base --is-ancestor PREV HEAD` succeeds → hunt for new findings only in `git diff PREV..HEAD`, but still build the context graph (§3) against the whole repo.
@@ -90,7 +92,7 @@ A hosted reviewer can only argue a bug exists. You can run it. Every P0/P1 candi
 | `none` | None of the above |
 
 Procedure:
-1. **Where to run.** Working tree, branch or `.diff` target → the repo as it is. PR target → don't touch the user's checkout: `git fetch origin pull/<n>/head:invertebrate-pr-<n>` then `git worktree add <scratch dir>/pr-<n> invertebrate-pr-<n>`; remove both when done. Running a PR runs its author's code: if the PR comes from a fork or someone other than the user, ask before executing anything.
+1. **Where to run.** Working tree, branch or `.diff` target → the repo as it is. PR target → don't touch the user's checkout: `git fetch origin pull/<n>/head:invertebrate-pr-<n>` then `git worktree add <scratch dir>/pr-<n> invertebrate-pr-<n>`; remove both when done. Running a PR runs its author's code: if the PR comes from a fork or someone other than the user, ask before executing anything. Unattended (CI, or nobody can answer) and the PR comes from a fork → don't execute anything: proofs are `trace` or `none`. A same-repo PR in CI is already checked out, so run in place.
 2. **Build check.** If the project has a typecheck/build command whose tool is already installed (`tsc --noEmit`, `cargo check`, `go build ./...`, `mypy`, the `build`/`typecheck` script in package.json), run it once. New errors in changed or dependent files are `build` proofs and become P0.
 3. **Repro.** For each remaining candidate, write the smallest test that triggers the failure scenario, using the project's test runner if it is already installed, else a stdlib-only script with plain asserts. Name it `invertebrate_repro_<n>` next to the project's tests, run it with a timeout, then delete it. The test must **assert correct behavior**, so it fails while the bug exists.
    - Fails as predicted → `repro`.
@@ -100,6 +102,7 @@ Procedure:
 4. **Never** install dependencies, hit the network, or touch real databases/services to get a proof. If proving needs that, the proof is `none`.
 5. **Order.** All proofs run on the unmodified post-change code, before the report is written and before any file is edited, even when the same message also asks for fixes. A `repro` label requires a run you executed that failed; a test that was only run after a fix proves nothing.
 6. After the last run, no repro files may be left behind: check `git status --porcelain`, or list the directory if it isn't a git repo.
+7. **Fewer turns.** Every tool call re-reads the whole conversation, so batch: write, run and delete each repro in one shell command (heredoc → run with timeout → `rm`, chained with `;` so it deletes even when the run fails), put all repros for the review in that same command when they don't depend on each other's results, and end it with the `git status --porcelain` check. Likewise, run the build check in the same command as the first repro.
 
 A P0/P1 with proof `none` drops one severity level (P0→P1, P1→P2) before filtering. Keep each repro's source: it goes in the inline comment so the reader can run it, and the fix loop (§8) reruns it.
 
@@ -204,8 +207,10 @@ Use exactly this structure (sections may be omitted only where noted):
 
 ---
 <sub>Reviewed <N> files · config: <.invertebrate or .greptile path | CLAUDE.md / AGENTS.md | defaults> · strictness <n> · <commit sha if known></sub>
-<!-- invertebrate:sha=<full head sha> scores=<previous scores from the marker, then this one, comma-separated, e.g. 1,2,4> -->
+<!-- invertebrate:sha=<full head sha> scores=<previous scores from the marker, then this one, comma-separated, e.g. 1,2,4> new=P0:<n>,P1:<n>,P2:<n> open=P0:<n>,P1:<n>,P2:<n> fixed=<n> proof=repro:<n>,build:<n>,trace:<n>,none:<n> -->
 ````
+
+Marker counts (the team dashboard reads them; always write every field, zeros included): `new` = this review's Findings by severity; `open` = everything still open after it (new + previous `open` + `regressed`); `fixed` = previous findings now `resolved`; `proof` = this review's new findings by proof.
 
 Suggested-fix diffs must be real, minimal, and apply to the actual code. If the fix spans files, show each file's hunk with its path as a heading line. If no safe one-hunk fix exists, describe it instead of inventing one.
 
@@ -272,3 +277,7 @@ Propose team rules from the repo's own review history. No server, nothing stored
 4. Group by underlying concern (e.g. "mutating endpoints need audit_log", "no raw SQL strings"). A concern becomes a proposed rule only when it is **accepted at least twice** and never rejected. A concern rejected at least twice becomes a proposed **ignore** instruction ("don't flag X").
 5. Output a proposed `rules.md` block and `config.json` `rules[]` entries, each with a scope glob taken from the files involved and the PR numbers as evidence. Then ask: "Say `save them` to write these to `.invertebrate/`."
 6. Only on `save them`: append to the repo-root `.invertebrate/rules.md` / merge into `.invertebrate/config.json` (create the folder if it doesn't exist; never edit `.greptile/`). Show the resulting diff.
+
+## 11. Dashboard (`invertebrate dashboard`)
+
+A team view built from the review markers already posted on the repo's PRs. No review happens. Run `python3 <this skill's base directory>/scripts/dashboard.py` (add `--repo <owner/name>` if the user names another repo, `--since <YYYY-MM-DD>` for a date range, `--limit <n>` for more or fewer PRs, max 100). It reads the most recently updated PRs with `gh` and writes a self-contained HTML file to the OS temp folder: PRs reviewed, median latest score, fix rate, PRs merged with a P0 open, open PRs worst first, weekly score trend, weekly new findings by severity, and how findings were proven. Open the printed path in the default browser and give the user the path, plus one line naming the worst open PR if there is one. Reviews from before 1.5 carry only a score, and the page says so. No `gh` or no Python → say the dashboard needs both.

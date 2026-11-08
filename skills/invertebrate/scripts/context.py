@@ -104,43 +104,50 @@ def changed_symbols(files):
     return syms
 
 
-def repo_files(skip):
-    listed = run(["git", "ls-files", "-co", "--exclude-standard"])
-    if listed:
-        paths = listed.splitlines()
-    else:
-        paths = []
-        for root, dirs, names in os.walk("."):
-            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-            paths += [os.path.relpath(os.path.join(root, n)).replace(os.sep, "/") for n in names]
-    keep = []
-    for p in paths:
-        if p in skip or not os.path.isfile(p) or os.path.getsize(p) > 1_000_000:
-            continue
-        keep.append(p)
-    return keep
+def searchable(path, skip):
+    return path not in skip and os.path.isfile(path) and os.path.getsize(path) <= 1_000_000
 
 
-def find_refs(names, paths):
+def git_scan(words, skip):
+    """Lines holding any of words as a whole word -> [(path, no, text)], via one `git grep` (tracked + untracked, not ignored)."""
+    out = run(["git", "grep", "--untracked", "-I", "-n", "-z", "-F", "-w", *[a for w in words for a in ("-e", w)]])
+    hits = []
+    for row in out.splitlines():
+        path, no, text = row.split("\0", 2)
+        hits.append((path, int(no), text))
+    keep = {p for p in {h[0] for h in hits} if searchable(p, skip)}
+    return [h for h in hits if h[0] in keep]
+
+
+def walk_scan(skip):
+    """Fallback outside git: read every file once, then scan in Python."""
+    paths = []
+    for root, dirs, names in os.walk("."):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        paths += [os.path.relpath(os.path.join(root, n)).replace(os.sep, "/") for n in names]
+    contents = {p: read_lines(p) for p in paths if searchable(p, skip)}
+
+    def scan(words):
+        word = re.compile(r"\b(" + "|".join(map(re.escape, words)) + r")\b")
+        return [(p, i, line) for p, lines in contents.items() for i, line in enumerate(lines, 1) if word.search(line)]
+    return scan
+
+
+def find_refs(names, scan):
     """Whole-word hits for each name; `name as alias` adds alias to the search. -> {name: [(path, no, text)]}"""
-    contents = {p: read_lines(p) for p in paths}
-    refs, queue, alias_of = {}, list(names), {}
-    while queue:
-        name = queue.pop(0)
-        if name in refs:
-            continue
-        word = re.compile(rf"\b{re.escape(name)}\b")
-        alias = re.compile(rf"\b{re.escape(name)}\s+as\s+([A-Za-z_]\w*)")
-        refs[name] = []
-        for p, lines in contents.items():
-            for i, line in enumerate(lines, 1):
-                if not word.search(line):
-                    continue
-                refs[name].append((p, i, line.strip()))
-                for a in alias.findall(line):
-                    if a not in refs and a not in queue:
-                        alias_of[a] = name
-                        queue.append(a)
+    refs, alias_of, batch = {}, {}, list(dict.fromkeys(names))
+    while batch:
+        hits = scan(batch)
+        found = []
+        for name in batch:
+            word = re.compile(rf"\b{re.escape(name)}\b")
+            alias = re.compile(rf"\b{re.escape(name)}\s+as\s+([A-Za-z_]\w*)")
+            refs[name] = [(p, i, line.strip()) for p, i, line in hits if word.search(line)]
+            for a in (a for _, _, line in refs[name] for a in alias.findall(line)):
+                if a not in refs and a not in alias_of:
+                    alias_of[a] = name
+                    found.append(a)
+        batch = found
     return refs, alias_of
 
 
@@ -198,12 +205,12 @@ def main(argv):
         print(f"{name}: {'; '.join(dict.fromkeys(why))}")
 
     skip = {os.path.normpath(diff_file).replace(os.sep, "/")} if diff_file else set()
-    paths = repo_files(skip)
-    refs, alias_of = find_refs(list(syms), paths)
+    in_git = bool(run(["git", "rev-parse", "--is-inside-work-tree"]))
+    scan = (lambda words: git_scan(words, skip)) if in_git else walk_scan(skip)
+    refs, alias_of = find_refs(list(syms), scan) if syms else ({}, {})
     # A file that never names a changed module only shares the symbol's name: list it, don't print its lines.
     stems = {os.path.splitext(os.path.basename(f["old_path"] if f["path"] == "/dev/null" else f["path"]))[0] for f in files}
-    stem_re = re.compile(r"\b(" + "|".join(map(re.escape, stems)) + r")\b")
-    related = {p for p in paths if stem_re.search("\n".join(read_lines(p)))} | {f["path"] for f in files}
+    related = {p for p, _, _ in scan(sorted(stems))} | {f["path"] for f in files}
     print("\n## references (whole-word, `x as y` aliases followed)")
     for name, hits in refs.items():
         label = f"{name} (alias of {alias_of[name]})" if name in alias_of else name
@@ -218,7 +225,7 @@ def main(argv):
         if others:
             print(f"same name, never mention a changed module ({len(others)} files): {', '.join(others)}")
 
-    if not run(["git", "rev-parse", "--is-inside-work-tree"]):
+    if not in_git:
         print("\n## history: not a git repo")
         return
     print(f"\n## history of removed lines (at {base}; FIX? = subject looks like a fix)")

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: real-humanize-tz-naturalday
+expected_outcome: |
+  humanize a47a89e reverted (#297): flags that naturalday/naturaldate compare a tz-aware datetime's date against the server's local date.today(), so near midnight the result is off by a day (e.g. 'tomorrow' instead of 'today'); P1 or P2; confidence <= 4/5.
+context:
+  scaffold_script: place-files.sh

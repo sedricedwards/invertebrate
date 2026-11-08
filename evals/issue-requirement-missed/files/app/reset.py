@@ -1,0 +1,25 @@
+import hashlib
+import secrets
+import time
+
+from app.store import db
+from app.users import set_password
+
+TOKEN_TTL_SECONDS = 3600
+
+
+def _hash(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def create_reset_token(user_id):
+    token = secrets.token_urlsafe(32)
+    db.reset_tokens[_hash(token)] = {"user_id": user_id, "created": time.time()}
+    return token
+
+
+def reset_password(token, new_password):
+    row = db.reset_tokens.get(_hash(token))
+    if row is None or time.time() - row["created"] > TOKEN_TTL_SECONDS:
+        raise ValueError("invalid or expired token")
+    set_password(row["user_id"], new_password)

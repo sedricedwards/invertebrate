@@ -41,12 +41,25 @@ with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:  # cwd is ins
             f.write(text)
     with open("pr.diff", "w") as f:
         f.write(DIFF)
-    out = subprocess.run([sys.executable, SCRIPT, "--diff", "pr.diff"], capture_output=True, text=True, check=True).stdout
+    os.makedirs("dist")
+    with open(".gitignore", "w") as f:
+        f.write("dist/\n")
+    with open("dist/bundle.js", "w") as f:
+        f.write("formatMoney(1); format(2);\n")
 
-    assert "format: removed def src/money.ts:1; added def src/money.ts:1" in out, out
-    assert "src/invoice.ts:2:" in out, "alias through barrel file not followed\n" + out  # format -> formatMoney -> invoice
-    assert "src/view.ts:" not in out.split("same name")[0], "same-name dates.format leaked into money refs\n" + out
-    assert "same name, never mention a changed module (2 files): src/dates.ts, src/view.ts" in out, out
-    assert "Fix currency rounding (#7)  FIX?" in out, out
-    assert "pr.diff" not in out, out
+
+    def check(out, in_git):
+        assert "format: removed def src/money.ts:1; added def src/money.ts:1" in out, out
+        assert "src/invoice.ts:2:" in out, "alias through barrel file not followed\n" + out  # format -> formatMoney -> invoice
+        assert "src/view.ts:" not in out.split("same name")[0], "same-name dates.format leaked into money refs\n" + out
+        assert "same name, never mention a changed module (2 files): src/dates.ts, src/view.ts" in out, out
+        assert "pr.diff" not in out, out
+        assert "dist/bundle.js" not in out, "ignored build output searched\n" + out
+        assert ("Fix currency rounding (#7)  FIX?" in out) == in_git, out
+
+
+    run = lambda: subprocess.run([sys.executable, SCRIPT, "--diff", "pr.diff"], capture_output=True, text=True, check=True).stdout
+    check(run(), in_git=True)  # git grep path (untracked files included, ignored ones not)
+    os.rename(".git", "no-git")
+    check(run(), in_git=False)  # os.walk fallback
 print("ok")

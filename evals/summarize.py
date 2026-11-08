@@ -22,10 +22,17 @@ CATEGORY = {
     "cross-file-rename": [FIND, FIND, SEV, FORMAT, FORMAT, PROOF],
     "incremental-rereview": [FORMAT, FIND, FIND, QUIET, FORMAT],
     "invertebrate-config-wins": [SEV, FIND, QUIET, FORMAT, FORMAT],
+    "issue-requirement-missed": [FIND, FIND, SEV, QUIET, FORMAT],
     "repro-then-fix": [FIND, PROOF, QUIET, PROOF, PROOF, PROOF],
     "reverted-fix": [FIND, FIND, SEV, FIND, FORMAT],
     "unauthed-endpoint-strict": [FIND, FIND, QUIET, FIND, FORMAT, PROOF],
     "unit-change-callers": [FIND, FIND, SEV, FORMAT, FORMAT, PROOF],
+    # Real-world: upstream fix commits reverted as the PR. Grader 01 is "finds the real bug".
+    "real-minimist-proto-pollution": [FIND, SEV, FORMAT, PROOF],
+    "real-pyjwt-der-hmac-key": [FIND, SEV, FORMAT, FIND],
+    "real-cachetools-setitem-overevict": [FIND, SEV, FORMAT, FIND],
+    "real-cachetools-rr-empty-choice": [FIND, SEV, FORMAT, PROOF],
+    "real-humanize-tz-naturalday": [FIND, SEV, FORMAT, FIND],
 }
 ORDER = [FIND, QUIET, SEV, PROOF, FORMAT]
 
@@ -98,6 +105,11 @@ def main():
     for cat in ORDER:
         w, o = counts[cat]["with"], counts[cat]["without"]
         print(f"| {cat} | {pct(w)}% ({w[0]}/{w[1]}) | {pct(o)}% ({o[0]}/{o[1]}) |")
+    real = [r for name, c in cases.items() if name.startswith("real-") for r in c["arms"]["with"]]
+    real_o = [r for name, c in cases.items() if name.startswith("real-") for r in c["arms"]["without"]]
+    if real:
+        hit = lambda rs: f"{sum(bool(r['graders'][0].get('passed')) for r in rs)}/{len(rs)}"
+        print(f"| Real-world cases: finds the upstream bug | {hit(real)} | {hit(real_o)} |")
     print(f"| Cases where every run passed every check | {passed('with')}/{len(cases)} | {passed('without')}/{len(cases)} |")
     print(f"| Median cost per review | ${med('with', 'costUsd'):.2f} | ${med('without', 'costUsd'):.2f} |")
     print(f"| Median time per review | {med('with', 'durationSeconds'):.0f}s | {med('without', 'durationSeconds'):.0f}s |")

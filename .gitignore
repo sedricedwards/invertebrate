@@ -1,1 +1,8 @@
 evals/results/
+__pycache__/
+evals/real-pyjwt-der-hmac-key/files/tests/keys/*.priv
+evals/real-pyjwt-der-hmac-key/files/tests/keys/testkey_ed25519
+evals/real-pyjwt-der-hmac-key/files/tests/keys/testkey_ed25519.pem
+evals/real-pyjwt-der-hmac-key/files/tests/keys/jwk_*_key_*.json
+evals/real-pyjwt-der-hmac-key/files/tests/keys/jwk_rsa_key.json
+evals/real-pyjwt-der-hmac-key/files/tests/test_advisory.py

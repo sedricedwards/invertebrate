@@ -1,0 +1,28 @@
+main { max-width: 980px; }
+a { color: inherit; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 0; }
+.tile { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; }
+.tile .big { font: 700 2rem/1.1 var(--mono); margin: 2px 0 4px; }
+.tile .muted { margin: 0; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.95rem; }
+th { text-align: left; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+th, td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+td.n, .sm .n { text-align: right; font-family: var(--mono); color: var(--ink); }
+.chart { width: 100%; min-width: 480px; height: auto; display: block; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font: 11px var(--mono); text-anchor: end; }
+.chart .axis.start { text-anchor: start; }
+.chart .line { fill: none; stroke: var(--ink); stroke-width: 2; }
+.chart .dot { fill: var(--ink); stroke: var(--panel); stroke-width: 2; }
+.chart .halo-hit { fill: transparent; }
+.chart .hit:hover .dot { r: 7; }
+.sm { display: grid; grid-template-columns: 9.5em 1fr 3em; align-items: end; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.sm-label { align-self: center; }
+.cols { display: flex; align-items: flex-end; gap: 2px; height: 44px; }
+.col { flex: 1 1 0; max-width: 28px; height: 100%; display: flex; align-items: flex-end; }
+.col i { display: block; width: 100%; height: var(--h); min-height: 1px; background: var(--c); border-radius: 4px 4px 0 0; }
+.col:hover i { outline: 2px solid var(--ink); }
+.sm .n { align-self: center; }
+.bar-row { grid-template-columns: 9.5em 1fr 2.5em; }
+.bar-fill { background: var(--ink); }

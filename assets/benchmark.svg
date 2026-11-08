@@ -11,8 +11,8 @@
 <text x="0" y="108" class="l">No false alarms</text>
 <rect x="150" y="86" width="412.8" height="18" class="w"/>
 <text x="568.8" y="99" class="v">96%</text>
-<rect x="150" y="106" width="305.3" height="18" class="o"/>
-<text x="461.3" y="119" class="v">71%</text>
+<rect x="150" y="106" width="348.3" height="18" class="o"/>
+<text x="504.3" y="119" class="v">81%</text>
 <text x="0" y="160" class="l">Right severity</text>
 <rect x="150" y="138" width="430.0" height="18" class="w"/>
 <text x="586.0" y="151" class="v">100%</text>
@@ -21,11 +21,11 @@
 <text x="0" y="212" class="l">Proof and fix</text>
 <rect x="150" y="190" width="399.9" height="18" class="w"/>
 <text x="555.9" y="203" class="v">93%</text>
-<rect x="150" y="210" width="240.8" height="18" class="o"/>
-<text x="396.8" y="223" class="v">56%</text>
+<rect x="150" y="210" width="223.6" height="18" class="o"/>
+<text x="379.6" y="223" class="v">52%</text>
 <text x="0" y="264" class="l">Report format</text>
 <rect x="150" y="242" width="430.0" height="18" class="w"/>
 <text x="586.0" y="255" class="v">100%</text>
-<rect x="150" y="262" width="55.9" height="18" class="o"/>
-<text x="211.9" y="275" class="v">13%</text>
+<rect x="150" y="262" width="51.6" height="18" class="o"/>
+<text x="207.6" y="275" class="v">12%</text>
 </svg>

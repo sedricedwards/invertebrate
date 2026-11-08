@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: real-cachetools-rr-empty-choice
+expected_outcome: |
+  cachetools bcf9e81 reverted (#423): flags that RRCache.popitem on an empty cache now depends on the custom `choice` raising IndexError, so a valid choice like `min` raises ValueError instead of KeyError; P1 or P2; confidence <= 4/5.
+context:
+  scaffold_script: place-files.sh

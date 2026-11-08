@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: real-cachetools-setitem-overevict
+expected_outcome: |
+  cachetools 39b31bc reverted (#405): flags that growing an existing key reserves its full new size, double-counting its old size and evicting an unrelated entry although the result would fit; P1; confidence <= 3/5.
+context:
+  scaffold_script: place-files.sh

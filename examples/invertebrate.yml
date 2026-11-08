@@ -1,0 +1,40 @@
+# Invertebrate review on every PR. Copy to .github/workflows/invertebrate.yml in your repo.
+# Set ONE repo secret (Settings → Secrets and variables → Actions):
+#   ANTHROPIC_API_KEY        - an API key from console.anthropic.com (billed per token)
+#   CLAUDE_CODE_OAUTH_TOKEN  - from `claude setup-token` run locally (uses your Claude Pro/Max plan)
+# Also install the Claude GitHub app on the repo: https://github.com/apps/claude
+name: Invertebrate review
+
+# `pull_request`, never `pull_request_target`: the latter runs with your secrets on code from forks.
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  review:
+    # Fork PRs get no secrets on `pull_request`, and their code shouldn't run unattended anyway.
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history: removed-line history and re-review ancestry need it
+
+      - uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: https://github.com/sedricedwards/invertebrate.git
+          plugins: invertebrate@sedricedwards
+          prompt: |
+            invertebrate review PR #${{ github.event.pull_request.number }} in ${{ github.repository }} and post it.
+            You are running unattended in CI: nobody can answer questions. The PR branch is checked out.
+          # Add your project's build/test commands so findings can be proven (e.g. Bash(make test:*)).
+          claude_args: |
+            --allowedTools "Skill,Read,Grep,Glob,Write,Bash(git:*),Bash(gh:*),Bash(python3:*),Bash(python:*),Bash(rm invertebrate_repro_*),Bash(pytest:*),Bash(npm run:*),Bash(npm test:*),Bash(go build:*),Bash(go test:*),Bash(cargo check:*),Bash(cargo test:*)"
