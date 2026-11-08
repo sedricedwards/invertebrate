@@ -22,6 +22,19 @@ How Invertebrate closes the gaps against hosted reviewers (Greptile, CodeRabbit)
 
 ⏳ = needs billed eval runs or a live GitHub repo.
 
+1.5.0 committed and pushed as `6a6acb5` (2026-11-07).
+
+## Next session
+
+1. **Run the 5 real-world evals** (billed): `evals/real-*`, then `python evals/summarize.py`. Record the pass rate, cost and turns in step 4's row above. This closes step 4.
+2. **Live CI test** on a throwaway repo, using `examples/invertebrate.yml`: one test PR with `ANTHROPIC_API_KEY` and one with `CLAUDE_CODE_OAUTH_TOKEN`. Each should get a posted review, and a second push should post a "Since last review" table. This closes step 2.
+3. Then the head-to-head (below). It needs Greptile and CodeRabbit accounts.
+
+### Known caveats
+
+- **pyjwt eval private keys are untracked** (in `.gitignore`): `real-pyjwt-der-hmac-key/files/tests/keys/` (`*.priv`, `testkey_ed25519`, `testkey_ed25519.pem`, `jwk_*_key_*.json`, `jwk_rsa_key.json`) and `files/tests/test_advisory.py`, which has keys pasted inline. They exist only on the original machine. On a fresh clone the scaffold still applies (`pr.diff` touches only `jwt/algorithms.py`) and the bug only needs public keys, but pyjwt's own key-based tests fail and the advisory test is missing. If those tests matter, generate the keys in `place-files.sh`, but only if the tests don't assert fixed signatures.
+- Tests are plain scripts with no pytest installed: `for f in tests/*.py; do python "$f"; done`.
+
 ## Gaps and plan
 
 Ordered cheapest-and-measurable first.
