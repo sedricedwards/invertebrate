@@ -1,12 +1,12 @@
 # Install
 
-Invertebrate is one skill folder, [`skills/invertebrate/`](skills/invertebrate/): `SKILL.md` plus two Python helpers. Every agent below loads that same folder. It runs only when your message contains the word "invertebrate".
+Invertebrate is one skill folder, [`skills/invertebrate/`](skills/invertebrate/): `SKILL.md` alone, no scripts. Every agent below loads that same folder. It runs only when your message contains the word "invertebrate".
 
 **Tested** means a review was run in that agent and checked. **Install checked** means the agent accepted the manifest and found the skill, but no review was run. **Untested** means the manifest follows the agent's documented format but has not been tried. Tell me (open an issue) if one fails.
 
 | Agent | Status |
 |---|---|
-| Claude Code | Tested (the eval suite, see [Numbers](README.md#numbers)) |
+| Claude Code | Tested (the benchmark suite, see [Numbers](README.md#numbers)) |
 | Antigravity CLI 1.4.5 | Install checked (`agy plugin validate --strict` and `agy plugin install`) |
 | Everything else | Untested |
 
@@ -14,7 +14,6 @@ Invertebrate is one skill folder, [`skills/invertebrate/`](skills/invertebrate/)
 
 - `git`, for every target except a `.diff` file
 - `gh` (the GitHub CLI, signed in), for PR targets, posting, and learn mode
-- Python 3, for the context helper and the HTML report. Without it, the agent does the same search by hand, which is slower
 
 ## Claude Code
 
@@ -84,9 +83,7 @@ Clone the repo, then point `qodercli plugins install` at the clone's folder. The
 
 ## pi and Oh My Pi
 
-```bash
-pi install git:github.com/sedricedwards/invertebrate
-```
+pi: copy `skills/invertebrate/` into its skills folder (see the last section below).
 
 Oh My Pi:
 
@@ -97,7 +94,7 @@ omp plugin install invertebrate@sedricedwards
 
 ## OpenCode, Cursor, Cline, Windsurf, Factory Droid, and other skill-capable agents
 
-Copy `skills/invertebrate/` (the whole folder, including `scripts/`) into your agent's skills folder. For example, that's `.opencode/skills/` for OpenCode, `~/.factory/skills/` for Factory Droid, `~/.openclaw/skills/` for OpenClaw, and `~/.agents/skills/` for agents that read that shared folder.
+Copy `skills/invertebrate/` (the whole folder) into your agent's skills folder. For example, that's `.opencode/skills/` for OpenCode, `~/.factory/skills/` for Factory Droid, `~/.openclaw/skills/` for OpenClaw, and `~/.agents/skills/` for agents that read that shared folder.
 
 ## Agents with only a rules file
 
@@ -109,7 +106,7 @@ When my message contains the word "invertebrate", read /path/to/invertebrate/ski
 
 ## What differs outside Claude Code
 
-- **References:** Claude Code has an `LSP` tool that follows aliased imports precisely. Elsewhere the skill uses text search plus its own helper (`scripts/context.py`). The helper follows `x as y` aliases, but it can miss references that only a language server would find.
+- **References:** Claude Code has an `LSP` tool that follows aliased imports precisely. Elsewhere the skill uses a batched `git grep` and follows `x as y` aliases by hand, so it can miss references that only a language server would find.
 - **Triggering:** the skill is meant to load only on the word "invertebrate". Agents that match skills loosely may load it for other review requests. If that happens, call the skill by name.
 - **Proof runs:** proving a finding means running a test. The agent needs permission to run shell commands, or every finding is marked Unproven.
 
@@ -123,5 +120,4 @@ When my message contains the word "invertebrate", read /path/to/invertebrate/ski
 | Antigravity CLI | `agy plugin uninstall invertebrate` |
 | Devin CLI | `devin plugins remove invertebrate` |
 | Grok Build | `grok plugin uninstall invertebrate` |
-| pi | `pi uninstall invertebrate` |
 | Copied folder or rules line | Delete it |

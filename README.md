@@ -6,8 +6,6 @@ Because it runs locally, it can also **prove** what it finds. Each serious findi
 
 Not affiliated with or endorsed by Greptile.
 
-<p align="center"><img src="assets/benchmark.svg" width="640" alt="Share of eval checks passed, with Invertebrate vs the same model with no skill. Finds the bug: 100% vs 100%. No false alarms: 96% vs 71%. Right severity: 100% vs 0%. Proof and fix: 93% vs 56%. Report format: 100% vs 13%."></p>
-
 <p align="center">
   <strong>Same bugs found. False alarms avoided: 96% vs 71%. Critical bugs labeled P0: 100% vs 0%. Repro tests and fixes: 93% vs 56%.</strong><br>
   <sub>Invertebrate 1.4, 11 seeded-bug repos, 3 runs each, Claude Code + Opus 5.5, the same model with and without the skill. Costs about 2x a plain review. <a href="#numbers">Details</a>.</sub>
@@ -40,7 +38,7 @@ gemini extensions install https://github.com/sedricedwards/invertebrate
 
 **Any other agent:** Copilot CLI, Antigravity, Devin, Grok, Goose, Kimi, Qoder, pi, OpenCode, Cursor, Cline and the rest are covered in **[INSTALL.md](INSTALL.md)**. If your agent isn't listed, copy the `skills/invertebrate/` folder into its skills folder (see INSTALL.md).
 
-Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md), plus three stdlib Python helpers. Every other file at the repo root just tells a particular agent where that folder is.
+Invertebrate is one prompt, [`skills/invertebrate/SKILL.md`](skills/invertebrate/SKILL.md) (the plugin ships no scripts). Every other file at the repo root just tells a particular agent where that folder is.
 
 ## Use
 
@@ -53,7 +51,6 @@ invertebrate review my uncommitted changes
 invertebrate review PR #12 and post it
 invertebrate re-review PR #12
 invertebrate learn
-invertebrate dashboard
 ```
 
 Accepted targets are a PR number or URL (needs the `gh` CLI), a branch (compared against main/master), the working tree, or a `.diff`/`.patch` file.
@@ -68,13 +65,9 @@ Everything is color-coded and labeled in plain words, so people who don't write 
 - **Findings table**: each finding's severity (🔴 P0 Critical / 🟠 P1 High / 🟡 P2 Medium), type (Bug / Won't compile / Cleanup), proof, and location
   - Proof is one of: Proven by test (a test it wrote and ran failed), Proven by build (compiler/typecheck error), Found by search (for example a surviving reference to a removed symbol), or Unproven
   - Unproven P0/P1 findings are demoted one level
-- **Diagram**: mermaid sequence, ER, class, or flow diagram, chosen to fit the change; skipped for trivial diffs. It's drawn as a picture on GitHub and in the visual report; in the terminal you see its source
+- **Diagram**: mermaid sequence, ER, class, or flow diagram, chosen to fit the change; skipped for trivial diffs. It's drawn as a picture on GitHub; in the terminal you see its source
 - **Inline comments**: the concrete failure scenario, a suggested-fix diff, and the repro test so you can run it yourself
 - **Since last review** (re-reviews only): each earlier finding marked ✅ resolved / ⚠️ open / 🔴 regressed, and the score across reviews (e.g. `1/5 → 2/5 → 4/5`). Only new findings get new comments
-
-### Visual report
-
-After a review, say `html` and Invertebrate writes a self-contained HTML page to your temp folder and opens it: the colored verdict, a bar chart of findings by severity, a chart of the score across reviews, the diagram drawn as a picture, and one color-coded card per finding. It needs Python. The page is one small file (about 25 KB) that works offline and loads nothing from the internet; the charts and diagram are drawn by code built into the page.
 
 ### Proving findings
 
@@ -83,10 +76,6 @@ Invertebrate runs the project's build/typecheck if the tool is already installed
 ### Re-reviews
 
 Each review ends with a hidden `<!-- invertebrate:sha=... -->` marker. On the next run against the same PR (or a saved review you point to), Invertebrate reviews only the commits since then and rechecks the earlier findings. After a force-push it falls back to a full review.
-
-### Dashboard
-
-`invertebrate dashboard` builds one HTML page from the reviews already posted on your repo's last 100 PRs: PRs reviewed, median score, fix rate (findings fixed on a later push), PRs merged while a P0 was open, open PRs worst first, the score per week, new findings per week by severity, and how findings were proven. It reads the hidden marker at the end of each posted review, so nothing is stored anywhere else. Reviews from before 1.5 only show their score. Needs `gh` and Python.
 
 ### Learn mode
 
@@ -129,23 +118,9 @@ If there's no config folder at all, it uses `CLAUDE.md` / `AGENTS.md` / `CONTRIB
 
 ## Tests
 
-`evals/` contains 11 seeded-bug sample projects: a cross-file rename, a semantic unit change, a missing auth check under strictness 3, an async race, a PR that claims a security fix it doesn't deliver, a clean PR that should get no findings, and a repo with both `.invertebrate/` and `.greptile/` to check that `.invertebrate/` wins. Four more cover the newer features:
+The benchmark suite (11 seeded-bug sample projects, 5 real-world upstream fixes, and their graders) holds code in many languages. Directory policy only accepts Markdown, text, JSON, YAML and images from unverified publishers, so it lives on the [`dev` branch](https://github.com/sedricedwards/invertebrate/tree/dev), not in the plugin. The cases cover: a cross-file rename, a semantic unit change, a missing auth check under strictness 3, an async race, a PR that claims a security fix it doesn't deliver, a clean PR that should get no findings, `.invertebrate/` beating `.greptile/`, a bug that must be proven by an executed repro, a reverted fix that must cite its original commit, aliased re-exports among decoys, and an incremental re-review.
 
-- `repro-then-fix`: the bug must be proven with a test that was actually run, a decoy the caller already handles must not be reported, and the fix must be confirmed by rerunning the repro
-- `reverted-fix`: the PR deletes a guard that a commit titled "Fix double charge…" added, and the review must cite that commit
-- `alias-reexport-distractors`: the broken callers are reachable only through `import { x as y }` and a re-export, among 30 unrelated callers of a function with the same name
-- `incremental-rereview`: a second review of a branch must mark the old finding resolved and report only the new bug
-
-Learn mode has no case, because it needs a live GitHub repository. To run them:
-
-```bash
-git clone https://github.com/sedricedwards/invertebrate && cd invertebrate
-claude plugin eval . --allow-tools Write,Edit,Bash --scaffold
-```
-
-These are real, billed model runs.
-
-To turn your runs into the numbers below and redraw `assets/benchmark.svg`, run `python evals/summarize.py`. It uses the newest with/without run of each case.
+To run them: check out the `dev` branch and run its `claude plugin` test command with the with/without ablation (real, billed model runs, about $19 for the full suite).
 
 ## Numbers
 
@@ -169,9 +144,8 @@ How to read this:
 - **"Right severity" is partly a format check.** Without the skill the model never uses P0/P1 labels, so it scores 0 there even when it calls a bug "high severity". The severity checks also require P0 rather than P1 for security and data-loss bugs.
 - **It costs more.** Building the context graph and running repro tests takes about twice the turns. The median review costs $0.19 more and takes 30 s longer.
 - **Where it still misses:** in `repro-then-fix`, 1 of 3 runs left a repro file behind, and its proof label didn't match a test that actually ran. In `invertebrate-config-wins`, 1 of 3 runs mentioned the overridden `.greptile/` docstring rule while explaining why it wasn't applied, and 2 of 3 judges counted that as a false alarm.
-- **Measured on 1.4.0** (2026-11-06). On 1.4.0, 2 of 3 `invertebrate-config-wins` runs rated an "anyone can cancel anyone's order" hole as P1 instead of P0. 1.4.1 adds one sentence to the severity rule (a missing auth or ownership check is always P0), and that case was re-run on 1.4.1: 3 of 3 rated it P0. The other 10 cases are from 1.4.0. Inside the eval sandbox the skill couldn't run its `context.py` helper and traced references with grep instead, so these numbers don't include the helper's speedup.
+- **Measured on 1.4.0** (2026-11-06). On 1.4.0, 2 of 3 `invertebrate-config-wins` runs rated an "anyone can cancel anyone's order" hole as P1 instead of P0. 1.4.1 adds one sentence to the severity rule (a missing auth or ownership check is always P0), and that case was re-run on 1.4.1: 3 of 3 rated it P0. The other 10 cases are from 1.4.0.
 
-Run it yourself: `claude plugin eval . --ablation with-without --allow-tools Write,Edit,Bash --scaffold`, then `python evals/summarize.py`. These are real, billed model runs, about $19 for the full suite.
 
 ## Before / after
 
@@ -206,7 +180,6 @@ A real pair of runs on 1.4.0 from the `invertebrate-config-wins` case. The PR ad
 ## Not included
 
 - Learning live from 👍/👎 reactions (learn mode proposes rules from past PRs instead)
-- A hosted dashboard (the dashboard is a local HTML file you generate)
 - Jira and Linear links (GitHub issues a PR closes are checked)
 
 ## Privacy and external services
@@ -219,7 +192,6 @@ Invertebrate declares no connectors. It contacts one outside service, **GitHub**
 | You explicitly ask to post the review | The review text and inline comments, posted to that PR as a `COMMENT` review |
 | You re-review a PR | A request for that PR's earlier reviews (read only) |
 | You run `invertebrate learn` | Requests for your recent merged PRs and their review comments (read only) |
-| You run `invertebrate dashboard` | A request for your recent PRs and their reviews (read only) |
 | A PR closes an issue | A request for that issue's title and body (read only) |
 
 It contacts no other service, and it collects and stores nothing. See the [Privacy Policy](PRIVACY.md).

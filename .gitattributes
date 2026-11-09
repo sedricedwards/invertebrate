@@ -1,3 +1,0 @@
-*.sh text eol=lf
-# Real-world eval cases: keep upstream bytes exact so pr.diff applies
-evals/real-*/files/** -text

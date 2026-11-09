@@ -1,6 +1,6 @@
 ---
 name: invertebrate
-description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, checks the PR delivers what its linked issue asks, can propose team rules from past PR review comments ("invertebrate learn"), and builds a team dashboard from posted reviews ("invertebrate dashboard"). Outputs Greptile's format, color-coded for non-programmers — safe-to-merge verdict, plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs — plus an optional visual HTML report with charts. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
+description: Invertebrate — Greptile-style AI code review of a PR, branch, or working-tree diff. Traces every changed symbol through the whole codebase (callers, callees, implementers, LSP references, git history of removed lines) to catch cross-file bugs and reverted fixes, proves each serious finding by running a repro test or build, re-reviews only what changed since its last review, checks the PR delivers what its linked issue asks, can propose team rules from past PR review comments ("invertebrate learn"). Outputs Greptile's format, color-coded for non-programmers — safe-to-merge verdict, plain-language summary, 0-5 confidence score, findings table, auto-chosen mermaid diagram, and inline comments with P0/P1/P2 severity, logic/syntax/style type, and suggested-fix diffs. Honors `.invertebrate/` config, falling back to `.greptile/` (rules.md, config.json strictness/commentTypes/rules/ignorePatterns, files.json). Optionally posts the review to a GitHub PR via `gh`. Use ONLY when the user's message explicitly contains the word "invertebrate" (e.g. "invertebrate review PR #12", "run invertebrate on my branch"). Do NOT use for any other code review request — including mentions of Greptile, PR reviews, confidence scores, or `.greptile` folders — unless the word "invertebrate" is present.
 ---
 
 # Invertebrate — Greptile-style review
@@ -52,7 +52,7 @@ A rule violation becomes a finding that cites the rule (`Rule: <id or first word
 
 For each changed hunk, identify the symbols it **defines, removes, renames, or changes the signature/semantics of** (functions, methods, classes, types, exported constants, routes, DB columns, config keys, env vars, event names).
 
-**Start with the helper, in one call.** Run `python3 <this skill's base directory>/scripts/context.py` (the base directory is the folder holding this SKILL.md) (`python` if `python3` is missing) with the diff source: `--diff <file>` for a diff file (PR target: save `gh pr diff <n>` to a scratch file first), else the git-diff args from §1 (`main...HEAD`, `HEAD`, `PREV..HEAD`). Add `--base <rev>` when removed lines' history should be read at a revision other than HEAD (the base branch for a branch target). It prints the changed symbols (definitions, plus the function enclosing each changed line), every whole-word reference across the repo with `x as y` aliases followed, files that only share the name (they never mention a changed module), and the commits that last touched each removed line (`FIX?` marks fix-like subjects). That is the first draft of the graph: don't re-grep or re-run `git log -L` for what it already lists. The steps below cover what it can't see: symbols it missed, LSP-only references, string references, siblings, callees, data flow. No Python available → do all of it by hand.
+**Start with one batched search.** Collect the changed symbols (definitions, plus the function enclosing each changed line). Find every whole-word reference across the repo in a single `git grep -n -w -F -e name1 -e name2 …` call (your search tool outside git), and re-grep only the new names for each `x as y` alias that turns up. List files that only share a name with a changed symbol but never mention its module; they are decoys. For each removed line, read the commits that last touched it (`git log -L` or `git blame`); a fix-like subject ("Fix…", "Prevent…") means the PR may be reverting a fix. The steps below cover what grep can't see: LSP-only references, string references, siblings, callees, data flow.
 
 For each such symbol, search the **whole repo**, not just changed files:
 - **Callers / references** — if an LSP tool is available (in Claude Code the `LSP` tool; load it via ToolSearch if it is only listed as deferred), use `findReferences` / `incomingCalls` on the symbol's definition (`goToImplementation` for interfaces): it follows aliased imports and re-exports and ignores unrelated symbols that share the name. Then grep the old and new name anyway (your search tool, or `rg`/`git grep`), for what LSP can't see: string references (routes, config keys, env vars, event names, reflection), other languages, and files LSP fails on. No LSP server → grep alone, and chase every alias (`import { x as y }`, `export { x as z }`, `export *`) to its own uses. A removed/renamed symbol with surviving references is a guaranteed bug.
@@ -210,27 +210,11 @@ Use exactly this structure (sections may be omitted only where noted):
 <!-- invertebrate:sha=<full head sha> scores=<previous scores from the marker, then this one, comma-separated, e.g. 1,2,4> new=P0:<n>,P1:<n>,P2:<n> open=P0:<n>,P1:<n>,P2:<n> fixed=<n> proof=repro:<n>,build:<n>,trace:<n>,none:<n> -->
 ````
 
-Marker counts (the team dashboard reads them; always write every field, zeros included): `new` = this review's Findings by severity; `open` = everything still open after it (new + previous `open` + `regressed`); `fixed` = previous findings now `resolved`; `proof` = this review's new findings by proof.
+Marker counts (always write every field, zeros included): `new` = this review's Findings by severity; `open` = everything still open after it (new + previous `open` + `regressed`); `fixed` = previous findings now `resolved`; `proof` = this review's new findings by proof.
 
 Suggested-fix diffs must be real, minimal, and apply to the actual code. If the fix spans files, show each file's hunk with its path as a heading line. If no safe one-hunk fix exists, describe it instead of inventing one.
 
-After the report, offer: "Say `fix all`, `fix P0`, or `fix #2` and I'll apply them, or `html` for a visual report you can share." Don't apply fixes unprompted.
-
-**Visual report** (only when asked: `html`, "visual report", "something I can show my manager"). Write the review you just gave as JSON to a temp file outside the repo (e.g. `invertebrate-review-<sha7>.json` in the OS temp folder), then run `python3 <this skill's base directory>/scripts/report.py <that file>`. It writes a self-contained `.html` next to it with a colored verdict, a findings-by-severity bar chart, the score trend, the rendered diagram, and one card per finding, and prints its path. Open it in the default browser and give the user the path. No Python → say the visual report needs Python. Shape (same content as the markdown report; omit keys that don't apply):
-
-```json
-{"title": "<PR title or branch>", "verdict": "<the Safe-to-merge sentence>", "score": 2,
- "score_reason": "<why>", "scores": [1, 2], "summary": "<summary>",
- "since_last": [{"title": "<previous finding>", "status": "resolved|open|regressed"}],
- "findings": [{"n": 1, "sev": "P0", "type": "logic", "proof": "repro", "location": "path/file.ts:42",
-   "title": "<short title>", "body": "<what's wrong>", "diff": "- old\n+ new",
-   "repro": "<the repro test and command, or the compiler error>"}],
- "diagram": <see below>, "footer": "<the footer line>"}
-```
-
-`scores` is the same history as the marker, ending with this score. `diagram` is the §7 diagram as data, not mermaid text. Mark the buggy step with `"bad": true`.
-- sequenceDiagram → `{"kind": "sequence", "actors": ["Client", "API"], "steps": [{"from": "Client", "to": "API", "label": "POST /pay"}, {"note": "charged twice", "over": "API", "bad": true}]}`
-- flowchart / classDiagram / erDiagram → `{"kind": "graph", "nodes": [{"id": "a", "label": "Order", "fields": ["id: int", "total_cents: int"]}], "edges": [{"from": "a", "to": "b", "label": "1 to many"}]}`. Class members and table columns go in `fields`; ER cardinality goes in the edge label.
+After the report, offer: "Say `fix all`, `fix P0`, or `fix #2` and I'll apply them." Don't apply fixes unprompted.
 
 **Fix loop.** When asked to fix, for each selected finding:
 1. Apply the fix.
@@ -277,7 +261,3 @@ Propose team rules from the repo's own review history. No server, nothing stored
 4. Group by underlying concern (e.g. "mutating endpoints need audit_log", "no raw SQL strings"). A concern becomes a proposed rule only when it is **accepted at least twice** and never rejected. A concern rejected at least twice becomes a proposed **ignore** instruction ("don't flag X").
 5. Output a proposed `rules.md` block and `config.json` `rules[]` entries, each with a scope glob taken from the files involved and the PR numbers as evidence. Then ask: "Say `save them` to write these to `.invertebrate/`."
 6. Only on `save them`: append to the repo-root `.invertebrate/rules.md` / merge into `.invertebrate/config.json` (create the folder if it doesn't exist; never edit `.greptile/`). Show the resulting diff.
-
-## 11. Dashboard (`invertebrate dashboard`)
-
-A team view built from the review markers already posted on the repo's PRs. No review happens. Run `python3 <this skill's base directory>/scripts/dashboard.py` (add `--repo <owner/name>` if the user names another repo, `--since <YYYY-MM-DD>` for a date range, `--limit <n>` for more or fewer PRs, max 100). It reads the most recently updated PRs with `gh` and writes a self-contained HTML file to the OS temp folder: PRs reviewed, median latest score, fix rate, PRs merged with a P0 open, open PRs worst first, weekly score trend, weekly new findings by severity, and how findings were proven. Open the printed path in the default browser and give the user the path, plus one line naming the worst open PR if there is one. Reviews from before 1.5 carry only a score, and the page says so. No `gh` or no Python → say the dashboard needs both.

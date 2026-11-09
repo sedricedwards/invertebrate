@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: cross-file-rename
-expected_outcome: |
-  Flags that the rename leaves src/email.ts and src/admin.ts calling the removed formatUser as P0/P1 with fixes; confidence <= 2/5.
-context:
-  scaffold_script: place-files.sh

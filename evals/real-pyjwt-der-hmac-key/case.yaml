@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: real-pyjwt-der-hmac-key
-expected_outcome: |
-  pyjwt 2798504 reverted: flags that DER-encoded public keys/certificates are again accepted as HMAC secrets, enabling algorithm confusion (forging HS256 tokens with a public key); P0; confidence <= 2/5.
-context:
-  scaffold_script: place-files.sh

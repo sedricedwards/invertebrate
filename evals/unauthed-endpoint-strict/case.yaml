@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: unauthed-endpoint-strict
-expected_outcome: |
-  Flags missing @require_auth as P0, missing audit_log citing audit-mutations rule, reports the null-body 500 crash, suppresses the snake_case nit (strictness 3); confidence <= 1/5.
-context:
-  scaffold_script: place-files.sh

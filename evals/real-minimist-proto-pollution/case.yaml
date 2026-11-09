@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: real-minimist-proto-pollution
-expected_outcome: |
-  minimist 38a4d1c reverted (CVE-2020-7598): flags prototype pollution via keys like `__proto__` or `constructor.prototype` in setKey as P0; confidence <= 2/5.
-context:
-  scaffold_script: place-files.sh

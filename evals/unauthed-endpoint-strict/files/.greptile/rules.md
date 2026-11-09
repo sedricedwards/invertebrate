@@ -1,1 +1,0 @@
-- Use snake_case for local variable names.

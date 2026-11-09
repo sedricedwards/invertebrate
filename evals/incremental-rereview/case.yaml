@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: incremental-rereview
-expected_outcome: |
-  Re-review using prior_review.md's invertebrate:sha marker: marks the overdraft finding resolved, reviews only the new commit, and reports the new transfer() bug (src debited, then dst.credit raises Frozen, money lost) as P0/P1 without re-reporting the overdraft as new.
-context:
-  scaffold_script: place-files.sh

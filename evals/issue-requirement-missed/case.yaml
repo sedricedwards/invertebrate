@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: issue-requirement-missed
-expected_outcome: |
-  Flags that the PR closes #12 but never makes reset tokens single-use (reset_password never deletes the token), so a leaked or reused link resets the password again within the hour; P0 or P1, citing the issue; does not report the issue's open question about notification emails; confidence <= 3/5.
-context:
-  scaffold_script: place-files.sh

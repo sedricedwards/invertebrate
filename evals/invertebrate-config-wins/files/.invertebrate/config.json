@@ -1,6 +1,0 @@
-{
-  "strictness": 3,
-  "rules": [
-    {"id": "audit-order-changes", "rule": "Every function that mutates ORDERS must call audit_log().", "scope": ["app/**/*.py"], "severity": "high"}
-  ]
-}
