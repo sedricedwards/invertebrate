@@ -1,6 +1,6 @@
 {
   "name": "invertebrate",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Greptile-style code review that traces every change through the whole repo. Runs only when you say 'invertebrate'.",
   "author": {
     "name": "Sedric Edwards"
@@ -13,5 +13,13 @@
     "pull-request",
     "greptile",
     "bugs"
-  ]
+  ],
+  "userConfig": {
+    "github_token": {
+      "type": "string",
+      "title": "GitHub token (optional)",
+      "description": "Used only by the gh CLI to read and post on pull requests. Needs read access to pull requests and issues, plus write access to pull requests if you post reviews. Leave blank to review local changes only.",
+      "sensitive": true
+    }
+  }
 }

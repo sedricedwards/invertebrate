@@ -184,7 +184,7 @@ A real pair of runs on 1.4.0 from the `invertebrate-config-wins` case. The PR ad
 
 ## Privacy and external services
 
-Invertebrate declares no connectors. It contacts one outside service, **GitHub**, through the GitHub CLI (`gh`), signed in as you:
+Invertebrate declares no connectors. It contacts one outside service, **GitHub**, through the GitHub CLI (`gh`), using the GitHub token you enter in the plugin settings (optional, kept in your system keychain, never read from your machine's stored `gh` login):
 
 | When | What is sent to GitHub |
 |---|---|

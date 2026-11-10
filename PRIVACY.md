@@ -26,7 +26,7 @@ To prove findings, Invertebrate may run your project's existing build or typeche
 
 ## What it sends
 
-- **To GitHub:** only when you explicitly ask it to post a review. The review goes to that pull request under your own GitHub account, through `gh`.
+- **To GitHub:** only when you explicitly ask it to post a review. The review goes to that pull request under the GitHub account your token belongs to, through `gh`. The token is the optional `github_token` plugin setting, stored in your system keychain and passed to `gh` as `GH_TOKEN` in your session; it is never sent anywhere else.
 - **To Anthropic:** Claude Code sends the conversation, including the files read during the review, to Anthropic's model to produce the review. That happens for any Claude Code task and is covered by [Anthropic's privacy policy](https://www.anthropic.com/legal/privacy), not by this plugin.
 
 Invertebrate sends nothing anywhere else, including to its author.

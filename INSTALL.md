@@ -13,7 +13,7 @@ Invertebrate is one skill folder, [`skills/invertebrate/`](skills/invertebrate/)
 ## What you need
 
 - `git`, for every target except a `.diff` file
-- `gh` (the GitHub CLI, signed in), for PR targets, posting, and learn mode
+- `gh` (the GitHub CLI), for PR targets, posting, and learn mode. In Claude Code, enter a GitHub token in the plugin's settings (stored in your system keychain). It is passed to `gh` as `GH_TOKEN`; Invertebrate never reads credentials `gh` stored on your machine. Other agents: set `GH_TOKEN` yourself.
 
 ## Claude Code
 
