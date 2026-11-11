@@ -16,7 +16,7 @@ How Invertebrate closes the gaps against hosted reviewers (Greptile, CodeRabbit)
 | 1. `git grep` search | ✅ done | 50k files / 5M lines: 20.4s → 4.4s warm (338s cold before), output byte-identical. `tests/test_context.py` covers git + non-git paths; mutants fail it. |
 | 2. CI workflow | ✅ built, ⏳ live run | `examples/invertebrate.yml`, `tests/test_workflow.py` (mutants fail it). Not yet run on a real PR with either auth method. |
 | 3. Cost | ❌ no gain, stopped | Profile of 33 runs: with-skill median 8 turns, 162k cache-read / 24k cache-write / 4.4k output tokens vs 60k / 12k / 2.1k without. Cache reads (turns × context) dominate. Change tried: batch repro write+run+delete and the build check into one shell call. Re-measured on 1.5.0 (7 cases, 21 runs): median turns 8 → 8, cost $0.36 → $0.38. Not a measurable cut; the extra cost probably comes from the longer SKILL.md (linked issues, dashboard), not proven. Moving learn/visual-report text out of SKILL.md would save ~3%: not worth an extra Read turn. Per the done-when rule: recorded, stopped. |
-| 4. Real-world evals | ✅ built, ⏳ run | 5 cases (`evals/real-*`) from upstream fixes: minimist 38a4d1c, pyjwt 2798504, cachetools 39b31bc + bcf9e81, humanize a47a89e. Scaffolds verified. |
+| 4. Real-world evals | ✅ done | Run 2026-11-10 on 1.5.0, 5 cases x 3 runs x 2 arms, 1.72, 945s. Finds the upstream bug: 15/15 with skill, 15/15 without. Right severity 14/15 vs 0/15, report format 15/15 vs 0/15 (those graders test skill-specific output, so that gap is partly by construction). The one miss: pyjwt run 1 did not label the bug P0. Median /bin/bash.48 / 98s / 10 turns with skill vs /bin/bash.29 / 76s / 7 turns without. Real-world detection shows no gain over the bare model on these 5; the value here is severity and format. |
 | 5. Linked issues | ✅ done | SKILL.md §1. Eval `issue-requirement-missed`: with skill 15/15 grader checks over 3 runs; no skill misses severity + format every run. `clean-pr-no-issues` still 12/12 with skill. |
 | 6. Dashboard | ✅ done | `scripts/dashboard.py` + marker counts, `tests/test_dashboard.py` (mutants fail it), checked light 1280px + dark 390px. |
 
@@ -26,7 +26,7 @@ How Invertebrate closes the gaps against hosted reviewers (Greptile, CodeRabbit)
 
 ## Next session
 
-1. **Run the 5 real-world evals** (billed): `evals/real-*`, then `python evals/summarize.py`. Record the pass rate, cost and turns in step 4's row above. This closes step 4.
+1. ~~Run the 5 real-world evals~~ done, see step 4.
 2. **Live CI test** on a throwaway repo, using `examples/invertebrate.yml`: one test PR with `ANTHROPIC_API_KEY` and one with `CLAUDE_CODE_OAUTH_TOKEN`. Each should get a posted review, and a second push should post a "Since last review" table. This closes step 2.
 3. Then the head-to-head (below). It needs Greptile and CodeRabbit accounts.
 
